@@ -2,7 +2,7 @@ import request from '@/router/axios';
 
 export const getList = (current, size, params) => {
   return request({
-    url: '/api/blade-courseType/list',
+    url: '/api/blade-courseType/page',
     method: 'get',
     params: {
       ...params,

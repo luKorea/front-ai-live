@@ -16,12 +16,13 @@
         <tags />
         <!-- 主体视图层 -->
         <el-scrollbar style="height:100%">
-          <keep-alive>
-            <router-view class="avue-view"
-                         v-if="$route.meta.keepAlive" />
-          </keep-alive>
-          <router-view class="avue-view"
-                       v-if="!$route.meta.keepAlive" />
+          <router-view class="avue-view"/>
+<!--          <keep-alive>-->
+<!--            <router-view class="avue-view"-->
+<!--                         v-if="$route.meta.keepAlive" />-->
+<!--          </keep-alive>-->
+<!--          <router-view class="avue-view"-->
+<!--                       v-if="!$route.meta.keepAlive" />-->
         </el-scrollbar>
 
       </div>

@@ -25,6 +25,7 @@
     },
     methods: {
       handleSubmit() {
+        console.log(this.form);
         this.$message({
           message: this.form,
           type: "success"

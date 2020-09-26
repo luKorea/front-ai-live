@@ -2,7 +2,7 @@ import request from '@/router/axios';
 
 export const getList = (current, size, params) => {
   return request({
-    url: '/api/blade-studio/page',
+    url: '/api/blade-member/page',
     method: 'get',
     params: {
       ...params,
@@ -14,7 +14,7 @@ export const getList = (current, size, params) => {
 
 export const getDetail = (id) => {
   return request({
-    url: '/api/blade-studio/detail',
+    url: '/api/blade-member/detail',
     method: 'get',
     params: {
       id
@@ -24,7 +24,7 @@ export const getDetail = (id) => {
 
 export const remove = (ids) => {
   return request({
-    url: '/api/blade-studio/remove',
+    url: '/api/blade-member/remove',
     method: 'post',
     params: {
       ids,
@@ -34,7 +34,7 @@ export const remove = (ids) => {
 
 export const add = (row) => {
   return request({
-    url: '/api/blade-studio/submit',
+    url: '/api/blade-member/submit',
     method: 'post',
     data: row
   })
@@ -42,25 +42,9 @@ export const add = (row) => {
 
 export const update = (row) => {
   return request({
-    url: '/api/blade-studio/submit',
+    url: '/api/blade-member/submit',
     method: 'post',
     data: row
   })
 }
 
-
-export const getTree = () => {
-  return request({
-    url: '/api/blade-courseType/tree',
-    method: 'get'
-  })
-}
-
-export const getTreeChildren = (courseTypeId) => {
-  return request({
-    url: '/api/blade-course/Tree',
-    params: {
-      courseTypeId
-    }
-  })
-}

@@ -23,7 +23,7 @@
                    size="small"
                    icon="el-icon-delete"
                    plain
-                   v-if="permission.coursetype_delete"
+                   v-if="permission.member_delete"
                    @click="handleDelete">删 除
         </el-button>
       </template>
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-  import {getList, getDetail, add, update, remove} from "@/api/course/coursetype";
+  import {getList, getDetail, add, update, remove} from "@/api/member/member";
   import {mapGetters} from "vuex";
 
   export default {
@@ -48,6 +48,8 @@
         },
         selectionList: [],
         option: {
+          height:'auto',
+          calcHeight: 30,
           tip: false,
           searchShow: true,
           searchMenuSpan: 6,
@@ -58,23 +60,84 @@
           dialogClickModal: false,
           column: [
             {
-              label: "上级课程类别",
-              labelWidth: 150,
-              prop: "parentId",
-              type: 'select',
-              dicUrl: "/api/blade-courseType/dropDown",
-              props: {
-                label: "parentName",
-                value: 'parentId'
-              }
-            },
-            {
-              label: "课程类别名称",
-              labelWidth: 150,
-              prop: "courseTypeName",
+              label: "",
+              prop: "id",
               rules: [{
                 required: true,
                 message: "请输入",
+                trigger: "blur"
+              }]
+            },
+            {
+              label: "手机号",
+              prop: "phone",
+              rules: [{
+                required: true,
+                message: "请输入手机号",
+                trigger: "blur"
+              }]
+            },
+            {
+              label: "真实姓名",
+              prop: "name",
+              rules: [{
+                required: true,
+                message: "请输入真实姓名",
+                trigger: "blur"
+              }]
+            },
+            {
+              label: "微信名称",
+              prop: "nickname",
+              rules: [{
+                required: true,
+                message: "请输入微信名称",
+                trigger: "blur"
+              }]
+            },
+            {
+              label: "直播间id",
+              prop: "studioId",
+              rules: [{
+                required: true,
+                message: "请输入直播间id",
+                trigger: "blur"
+              }]
+            },
+             {
+              label: "课程名称",
+              prop: "courseTitle",
+              rules: [{
+                required: true,
+                message: "请输入直播间id",
+                trigger: "blur"
+              }]
+            },
+            
+            {
+              label: "上课时长",
+              prop: "time",
+              rules: [{
+                required: true,
+                message: "请输入上课时长",
+                trigger: "blur"
+              }]
+            },
+            {
+              label: "意向程度",
+              prop: "intentionName",
+              rules: [{
+                required: true,
+                message: "请输入（1,2,3,4） 对应（A、B、C、D）",
+                trigger: "blur"
+              }]
+            },
+             {
+              label: "销售姓名",
+              prop: "realName",
+              rules: [{
+                required: true,
+                message: "请输入上课时长",
                 trigger: "blur"
               }]
             },
@@ -87,10 +150,10 @@
       ...mapGetters(["permission"]),
       permissionList() {
         return {
-          addBtn: this.vaildData(this.permission.coursetype_add, false),
-          viewBtn: this.vaildData(this.permission.coursetype_view, false),
-          delBtn: this.vaildData(this.permission.coursetype_delete, false),
-          editBtn: this.vaildData(this.permission.coursetype_edit, false)
+          addBtn: this.vaildData(this.permission.member_add, false),
+          viewBtn: this.vaildData(this.permission.member_view, false),
+          delBtn: this.vaildData(this.permission.member_delete, false),
+          editBtn: this.vaildData(this.permission.member_edit, false)
         };
       },
       ids() {
@@ -103,14 +166,7 @@
     },
     methods: {
       rowSave(row, done, loading) {
-        let {parentId} = row;
-        if (parentId === '') {
-          parentId = 0;
-        }
-        add({
-          ...row,
-          parentId
-        }).then(() => {
+        add(row).then(() => {
           this.onLoad(this.page);
           this.$message({
             type: "success",

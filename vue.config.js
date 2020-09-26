@@ -27,7 +27,7 @@ module.exports = {
     // 反向代理配置
     proxy: {
       '/api': {
-        target: 'http://localhost:2829',
+        target: 'http://192.168.0.113:2829',
         ws: true,
         pathRewrite: {
           '^/api': '/'
