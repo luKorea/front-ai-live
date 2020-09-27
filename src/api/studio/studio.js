@@ -64,3 +64,22 @@ export const getTreeChildren = (courseTypeId) => {
     }
   })
 }
+
+export const openStudio = (data) => {
+  return request({
+    url: '/api/blade-studio/save',
+    method: 'post',
+    data
+  })
+}
+
+
+export const sendStudioAddress = (vid) => {
+  return request({
+    url: '/api/blade-studio/studioCode',
+    method: 'get',
+    params: {
+      vid
+    }
+  })
+}

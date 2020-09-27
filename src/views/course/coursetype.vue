@@ -64,7 +64,7 @@
               type: 'select',
               dicUrl: "/api/blade-courseType/dropDown",
               props: {
-                label: "parentName",
+                label: "courseTypeName",
                 value: 'parentId'
               }
             },

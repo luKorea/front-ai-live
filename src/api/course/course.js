@@ -48,3 +48,23 @@ export const update = (row) => {
   })
 }
 
+// 排课管理
+export const getCourseEdit = (courseId) => {
+  return request({
+    url: '/api/blade-schedule/page',
+    method: 'get',
+    params: {
+      courseId
+    }
+  })
+}
+
+
+// 添加排课管理
+export const courseEdit = (data) => {
+  return request({
+    url: '/api/blade-schedule/save',
+    method: 'post',
+    data: data
+  })
+}

@@ -48,8 +48,6 @@
         },
         selectionList: [],
         option: {
-          height:'auto',
-          calcHeight: 30,
           tip: false,
           searchShow: true,
           searchMenuSpan: 6,
@@ -58,6 +56,7 @@
           viewBtn: true,
           selection: true,
           dialogClickModal: false,
+          menu: false,
           column: [
             {
               label: "",
@@ -113,7 +112,7 @@
                 trigger: "blur"
               }]
             },
-            
+
             {
               label: "上课时长",
               prop: "time",

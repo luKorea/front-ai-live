@@ -77,8 +77,12 @@
           <div>
             <el-tag style="margin-bottom: 10px">课程直播时间</el-tag>
           </div>
-          <el-cascader :options="selectData" v-model="
-          activeName === 'first' ? signStudio.selectCourse : moreStudio.selectCourse"/>
+          <el-cascader
+            :options="selectData"
+            style="width: 100%"
+            v-model="cascaderInfo"
+            @change="sendLink"
+          />
         </el-col>
         <el-col span="12">
           <el-tabs v-model="activeName" @tab-click="handleClick">
@@ -86,10 +90,12 @@
             <el-tab-pane label="生成个人直播间" name="first">
               <el-form v-model="signStudio">
                 <el-form-item label="手机号码" prop="phone">
-                  <el-input v-model="signStudio.phone"/>
+                  <el-input v-model="signStudio.phone" type="text"
+                            show-word-limit
+                            maxlength="11"/>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="submitStudio(1)">生成链接</el-button>
+                  <el-button type="primary" @click="submitStudio(1)">保存</el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
                   <el-input v-model="signStudio.url" type="textarea" disabled/>
@@ -108,11 +114,14 @@
             <el-tab-pane label="生成多人直播间" name="second">
               <el-form v-model="moreStudio">
                 <el-form-item label="手机号码" prop="phone">
-                  <el-input v-model="moreStudio.phone" type="textarea"
-                            :rows="6"/>
+                  <el-input v-model="moreStudio.phone"
+                            type="textarea"
+                            :rows="6"
+                            :cols="4"
+                  />
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="submitStudio(2)">生成链接</el-button>
+                  <el-button type="primary" @click="submitStudio(2)">保存</el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
                   <el-input v-model="moreStudio.url" type="textarea" disabled/>
@@ -129,10 +138,6 @@
           </el-tabs>
         </el-col>
       </el-row>
-      <div slot="footer" class="dialog-footer">
-        <el-button plain @click="showStudio = false">取消</el-button>
-        <el-button type="primary" @click="showStudio = false">确 定</el-button>
-      </div>
     </el-dialog>
 
 
@@ -159,7 +164,7 @@ import {
   add,
   update,
   remove,
-  getTree, getTreeChildren
+  getTree, getTreeChildren, openStudio, sendStudioAddress
 } from "@/api/studio/studio";
 import {mapGetters} from "vuex";
 import Clipboard from 'clipboard';
@@ -185,6 +190,7 @@ export default {
         viewBtn: true,
         selection: true,
         dialogClickModal: false,
+        menu:false,
         column: [
           {
             label: "直播间ID",
@@ -198,12 +204,7 @@ export default {
           },
           {
             label: "视频地址",
-            prop: "scheduleId",
-            rules: [{
-              required: true,
-              message: "请输入直播时间",
-              trigger: "blur"
-            }]
+            prop: "classAddress"
           },
           {
             label: "课程名称",
@@ -234,6 +235,7 @@ export default {
       showAddStudent: false,
       studentInfo: {},
       showStudio: false,
+      cascaderInfo: [],
       studioSearch: {
         value: '',
         time: '',
@@ -242,12 +244,14 @@ export default {
       signStudio: {
         phone: null,
         selectCourse: '',
-        url: 'https://share.plvideo.cn/front/video/preview?vid=27379d4a88949fbda3c153a44411f1f4_2'
+        url: '',
+        code: '',
       },
       moreStudio: {
         phone: null,
         selectCourse: '',
-        url: 'https://share.plvideo.cn/front/video/preview?vid=27379d4a88949fbda3c153a44411f1f4_2'
+        url: '',
+        code: ''
       },
       treeData: [],
       defaultProps: {
@@ -465,34 +469,105 @@ export default {
         }
       })
     },
-
+    // 生成直播间链接
+    sendLink() {
+      this.selectData.map((item) => {
+        if (this.cascaderInfo[0] === item.value) {
+          sendStudioAddress(item.vid)
+          .then(res => {
+            if (res.data.code === 200) {
+              if (this.activeName === 'first') {
+                this.signStudio.url = res.data.data.url;
+                this.signStudio.code = res.data.data.code;
+              } else {
+                this.moreStudio.url = res.data.data.url;
+                this.moreStudio.code = res.data.data.code;
+              }
+            }
+          }).catch(err => {
+            console.log(err);
+          })
+        }
+      })
+    },
     submitStudio(type) {
-      if (type === 1) {
-        let {phone} = this.signStudio;
-        let newPhone = [phone];
-        this.signStudio = {
-          ...this.signStudio,
-          phone: newPhone
+      console.log(this.cascaderInfo);
+      this.selectData.map((item) => {
+        if (this.cascaderInfo[0] === item.value) {
+          item.children.map(i => {
+            if (i.value === this.cascaderInfo[1]) {
+              if (type === 1) {
+                let {phone} = this.signStudio;
+                let newPhone = [phone];
+                let newsPhone = newPhone.map(item => {
+                  return {
+                    phone: item
+                  }
+                })
+                let data = {
+                  memberList: newsPhone,
+                  studioType: 1,
+                  courseId: item.value,
+                  scheduleId: i.id,
+                  classAddress: this.signStudio.url,
+                  code: this.signStudio.code
+                }
+                console.log(data);
+                openStudio(data)
+                .then(res => {
+                  if(res.data.code === 200) {
+                    this.$message.success('开通成功')
+                    this.onLoad(this.page);
+                    this.showStudio = false;
+                  }
+                })
+                .catch(err => {
+                  console.log(err);
+                })
+              }
+              else {
+                let {phone} = this.moreStudio;
+                if (phone === null) {
+                  this.$message.error('请输入手机号码')
+                  return
+                }
+                let newPhone = phone.split(/[\s\n]/);
+                let newsPhone = newPhone.map(item => {
+                  return {
+                    phone: item
+                  }
+                })
+                let data = {
+                  memberList: newsPhone,
+                  studioType: 1,
+                  courseId: item.value,
+                  scheduleId: i.id,
+                  classAddress: this.moreStudio.url,
+                  code: this.moreStudio.code
+                }
+                console.log(data);
+                openStudio(data)
+                  .then(res => {
+                    if(res.data.code === 200) {
+                      this.$message.success('开通成功')
+                      this.onLoad(this.page);
+                      this.showStudio = false;
+                    }
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  })
+              }
+            }
+          })
         }
-        console.log(this.signStudio);
-      } else {
-        let {phone} = this.moreStudio;
-        if (phone === null) {
-          this.$message.error('请输入手机号码')
-          return
-        }
-        let newPhone = phone.split(/[\s\n]/);
-        this.moreStudio = {
-          ...this.moreStudio,
-          phone: newPhone
-        }
-        console.log(newPhone);
-        console.log(this.moreStudio);
-      }
+      })
     },
     // TODO 追加学员
-    handleClick(tab, event) {
-      console.log(tab, event);
+    handleClick() {
+      this.cascaderInfo = [];
+      this.moreStudio.url = '';
+      this.signStudio.url = '';
     },
     handleAddStudent() {
       if (this.selectionList.length === 0) {

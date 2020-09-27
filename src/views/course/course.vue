@@ -53,7 +53,6 @@
     <el-dialog title="排课管理"
                :visible.sync="showCourse"
                :close-on-click-modal="false"
-               :destroy-on-close="true"
                width="50%">
       <el-form label-width="80px" :model="courseInfo">
         <el-form-item label="课程名称">
@@ -68,40 +67,34 @@
         <el-form-item label="课表时间" required>
           <el-date-picker
             class="m-right"
-            v-model="courseInfo.courseDate"
+            v-model="courseInfo.day"
             type="date"
             format="yyyy 年 MM 月 dd 日"
             value-format="yyyy-MM-dd"
             placeholder="选择日期"/>
           <el-time-picker
             class="m-right"
-            v-model="courseInfo.courseTime"
+            v-model="courseInfo.startTime"
             placeholder="选择时间点"
             format="HH 时 MM 分"
             value-format="HH:MM"
           />
           <el-button type="primary" @click="submitCourse">确 定</el-button>
         </el-form-item>
-        <!--        <el-form-item label="时长">-->
-        <!--          <el-input v-model="courseInfo.time" disabled/>-->
-        <!--        </el-form-item>-->
       </el-form>
       <el-divider/>
 
-      <el-table
-        border
-        :stripe="true"
-        :data="tableData"
-        style="width: 100%">
-        <el-table-column prop="Id" label="序号" align="center" width="80%"/>
-        <el-table-column prop="date" label="日期" align="center"/>
-        <el-table-column prop="time" label="开课时间" align="center" />
-        <el-table-column label="操作" align="center">
-          <template slot-scope="scope">
-            <el-button @click="courseDelete(scope.row)" type="text" size="small">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <avue-crud :option="courseOption"
+                 :table-loading="loading"
+                 :data="tableData"
+                 :page.sync="coursePage"
+                 @row-del="delCourse"
+                 @selection-change="selectionChange1"
+                 @current-change="currentChange1"
+                 @size-change="sizeChange1"
+                 class="course-opt"
+                >
+      </avue-crud>
     </el-dialog>
     <!--  话术管理  -->
     <el-dialog title="话术管理"
@@ -134,32 +127,33 @@
         <el-button type="primary" class="m-right" @click="submitSpeechcraft">导入</el-button>
         <el-button type="primary" class="m-right" @click="submitSpeechcraft">导出</el-button>
         <el-button type="primary" @click="submitSpeechcraft">确 定</el-button>
-        <!--        <el-form-item label="时长">-->
-        <!--          <el-input v-model="courseInfo.time" disabled/>-->
-        <!--        </el-form-item>-->
       </el-form>
       <el-divider/>
-
-      <el-table
-        border
-        :stripe="true"
-        :data="tableData1"
-        style="width: 100%">
-        <el-table-column prop="Id" label="序号" align="center" width="80%"/>
-        <el-table-column prop="time" label="时间" align="center" />
-        <el-table-column prop="content" label="话术内容" align="center" />
-        <el-table-column label="操作" align="center">
-          <template slot-scope="scope">
-            <el-button @click="speechcraftDelete(scope.row)" type="text" size="small">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <avue-crud :option="speechcraftOption"
+                 :table-loading="loading"
+                 :data="speechcraftData"
+                 :page.sync="speechcraftPage"
+                 @row-del="speechcraftDelete"
+                 @selection-change="speechcraftSelectionChange"
+                 @current-change="speechcraftCurrentChange"
+                 @size-change="speechcraftSizeChange"
+                 class="course-opt"
+      >
+      </avue-crud>
     </el-dialog>
   </basic-container>
 </template>
 
 <script>
-import {getList, getDetail, add, update, remove} from "@/api/course/course";
+import {
+  getList,
+  getDetail,
+  add,
+  update,
+  remove,
+  courseEdit,
+  getCourseEdit
+} from "@/api/course/course";
 import {mapGetters} from "vuex";
 
 export default {
@@ -168,52 +162,12 @@ export default {
       form: {},
       query: {},
       loading: true,
-      // 排课管理
-      showCourse: false,
-      courseInfo: {},
-      tableData: [{
-        Id: 1,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
-      }, {
-        Id: 2,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
-      }, {
-        Id: 3,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
-      }, {
-        Id: 4,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
-      }],
-      // 话术管理
-      showSpeechcraft: false,
-      speechcraftInfo: {},
-      tableData1: [{
-        Id: 1,
-        time: new Date().toLocaleTimeString(),
-        content: '老师讲的非常好'
-      }, {
-        Id: 2,
-        time: new Date().toLocaleTimeString(),
-        content: '好喜欢这个老师'
-      }, {
-        Id: 3,
-        time: new Date().toLocaleTimeString(),
-        content: '好喜欢这个老师'
-      }, {
-        Id: 4,
-        time: new Date().toLocaleTimeString(),
-        content: '老师讲的非常好'
-      }],
+      data: [],
       page: {
         pageSize: 10,
         currentPage: 1,
         total: 0
       },
-      selectionList: [],
       option: {
         tip: false,
         border: true,
@@ -306,7 +260,63 @@ export default {
           },
         ]
       },
-      data: []
+      selectionList: [],
+      // 话术管理
+      showSpeechcraft: false,
+      speechcraftInfo: {},
+      speechcraftPage: {
+        pageSize: 10,
+        currentPage: 1,
+        total: 0
+      },
+      speechcraftOption: {
+        column: [
+          {
+            label: '序号',
+            prop: 'id',
+            display: false
+          },
+          {
+            label:"日期",
+            prop:"day",
+            display: false
+          },
+          {
+            label:"话术内容",
+            prop:"startTime",
+            display: false
+          },
+        ]
+      },
+      speechcraftData: [],
+      // 排课管理
+      showCourse: false,
+      courseInfo: {},
+      courseOption: {
+        column: [
+          {
+            label: '序号',
+            prop: 'id',
+            display: false
+          },
+          {
+            label:"日期",
+            prop:"day",
+            display: false
+          },
+          {
+            label:"开播时间",
+            prop:"startTime",
+            display: false
+          },
+        ]
+      },
+      coursePage: {
+        pageSize: 10,
+        currentPage: 1,
+        total: 0
+      },
+      tableData: [],
     };
   },
   computed: {
@@ -338,19 +348,19 @@ export default {
         video = null;
       vid.forEach(item => video = item.value)
       console.log(courseTypeId);
-      // add({
-      //   courseTitle, courseTypeId, vid: video, isEnable, isReal
-      // }).then(() => {
-      //   this.onLoad(this.page);
-      //   this.$message({
-      //     type: "success",
-      //     message: "操作成功!"
-      //   });
-      //   done();
-      // }, error => {
-      //   window.console.log(error);
-      //   loading();
-      // });
+      add({
+        courseTitle, courseTypeId, vid: video, isEnable, isReal
+      }).then(() => {
+        this.onLoad(this.page);
+        this.$message({
+          type: "success",
+          message: "操作成功!"
+        });
+        done();
+      }, error => {
+        window.console.log(error);
+        loading();
+      });
     },
     rowUpdate(row, index, done, loading) {
       update(row).then(() => {
@@ -365,7 +375,7 @@ export default {
         loading();
       });
     },
-    rowDel() {
+    rowDel(row) {
       this.$confirm("确定将选择数据删除?", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -405,6 +415,7 @@ export default {
         });
     },
 
+    // 课程列表
     beforeOpen(done, type) {
       if (["edit", "view"].includes(type)) {
         getDetail(this.form.id).then(res => {
@@ -450,6 +461,42 @@ export default {
       });
     },
     //  TODO 排课管理
+    currentChange1(currentPage) {
+      this.coursePage.currentPage = currentPage;
+    },
+    sizeChange1(pageSize) {
+      this.coursePage.pageSize = pageSize;
+    },
+    selectionChange1(list) {
+      this.selectionList = list;
+    },
+    onLoadCourse(courseId) {
+      this.loading = true;
+      getCourseEdit(courseId).then(res => {
+        const data = res.data.data;
+        this.coursePage.total = data.total;
+        this.tableData = data.records;
+        this.loading = false;
+        this.selectionClear();
+      });
+    },
+    delCourse(row) {
+      this.$confirm("确定将选择数据删除?", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          return remove(row.id);
+        })
+        .then(() => {
+          // this.onLoad(this.page);
+          this.$message({
+            type: "success",
+            message: "操作成功!"
+          });
+        });
+    },
     handleCourse() {
       if (this.selectionList.length === 0) {
         this.$message.warning("请选择至少一条数据");
@@ -460,9 +507,24 @@ export default {
       }
       this.showCourse = true;
       this.courseInfo = this.selectionList[0] || {};
+      console.log(this.courseInfo);
+      this.onLoadCourse(this.courseInfo.id);
     },
     submitCourse() {
-      console.log(this.courseInfo);
+      const data = {
+        startTime: this.courseInfo.startTime,
+        courseId: this.courseInfo.id,
+        day: this.courseInfo.day
+      }
+      courseEdit(data)
+      .then(res => {
+        if (res.data.code === 200) {
+          this.$message.success('操作成功')
+          this.onLoadCourse(this.courseInfo.id)
+        }
+      }).catch(err => {
+        console.log(err);
+      })
     },
     courseDelete(row) {
       this.$confirm("确定将选择数据删除?", {
@@ -475,6 +537,43 @@ export default {
         })
     },
     // TODO 话术管理
+    speechcraftCurrentChange(currentPage) {
+      this.speechcraftPage.currentPage = currentPage;
+    },
+    speechcraftSizeChange(pageSize) {
+      this.speechcraftPage.pageSize = pageSize;
+    },
+    speechcraftSelectionChange(list) {
+      this.selectionList = list;
+    },
+    onLoadSpeechcraft(courseId) {
+      this.loading = true;
+      getCourseEdit(courseId).then(res => {
+        const data = res.data.data;
+        this.speechcraftPage.total = data.total;
+        this.speechcraftData = data.records;
+        this.loading = false;
+        this.selectionClear();
+      });
+    },
+    speechcraftDelete(row) {
+      this.$confirm("确定将选择数据删除?", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          return remove(row.id);
+        })
+        .then(() => {
+          // this.onLoad(this.page);
+          this.$message({
+            type: "success",
+            message: "操作成功!"
+          });
+        });
+    },
+
     handleSpeechcraft() {
       if (this.selectionList.length === 0) {
         this.$message.warning("请选择至少一条数据");
@@ -485,19 +584,10 @@ export default {
       }
       this.showSpeechcraft = true;
       this.speechcraftInfo = this.selectionList[0] || {};
+      this.onLoadSpeechcraft(this.speechcraftInfo.id);
     },
     submitSpeechcraft() {
       console.log(this.speechcraftInfo);
-    },
-    speechcraftDelete(row) {
-      this.$confirm("确定将选择数据删除?", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      })
-        .then(() => {
-          console.log(row);
-        })
     },
     // TODO 解锁，锁定
     handleDeblocking() {
@@ -555,5 +645,7 @@ export default {
 </script>
 
 <style>
-
+.course-opt .avue-crud__menu {
+  display: none;
+}
 </style>
