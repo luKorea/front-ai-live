@@ -68,3 +68,54 @@ export const courseEdit = (data) => {
     data: data
   })
 }
+
+// 删除排课管理
+export const removeCourse = (ids) => {
+  return request({
+    url: '/api/blade-schedule/remove',
+    method: 'post',
+    params: {
+      ids,
+    }
+  })
+}
+
+// 解锁锁定接口
+export const lockCourse = (data) => {
+  return request({
+    url: '/api/blade-course/locking',
+    method: 'post',
+    data
+  })
+}
+
+// 话术管理
+export const speechcraftData = (courseId) => {
+  return request({
+    url: '/api/blade-words/page',
+    method: 'get',
+    params: {
+      courseId
+    }
+  })
+}
+
+// 添加话术管理
+export const speechcraftEdit = (data) => {
+  return request({
+    url: '/api/blade-words/save',
+    method: 'post',
+    data: data
+  })
+}
+
+// 删除话术管理
+export const removeSpeechcraft = (ids) => {
+  return request({
+    url: '/api/blade-words/remove',
+    method: 'post',
+    params: {
+      ids,
+    }
+  })
+}

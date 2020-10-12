@@ -45,7 +45,6 @@
     <el-dialog title="开通直播"
                :visible.sync="showStudio"
                :close-on-click-modal="false"
-               :destroy-on-close="true"
                width="50%">
       <el-form label-width="80px" :model="studioSearch">
         <el-form-item label="筛选">
@@ -68,10 +67,9 @@
           <el-tag style="margin-bottom: 10px">课程类别</el-tag>
           <el-tree
             :data="treeData"
-            :props="defaultProps"
             ref="tree"
-            node-key="id"
-            default-expand-all
+            node-key="key"
+            :render-after-expand="false"
             @node-click="handleTree"
           />
           <div>
@@ -145,12 +143,12 @@
     <el-dialog title="添加学员"
                :visible.sync="showAddStudent"
                :close-on-click-modal="false"
-               :destroy-on-close="true"
                width="50%">
       <el-form label-width="80px" :model="studentInfo">
-        <el-form-item label="课程名称">
-          <el-input v-model="studentInfo.courseTitle" disabled/>
-        </el-form-item>
+<!--        <el-form-item label="课程名称">-->
+<!--          <el-input v-model="studentInfo.courseTitle" disabled/>-->
+<!--        </el-form-item>-->
+        未实现
         <el-button type="primary" @click="submitStudent">确 定</el-button>
       </el-form>
     </el-dialog>
@@ -291,6 +289,7 @@ export default {
         .then(res => {
           if (res.data.code === 200) {
             this.treeData = res.data.data;
+            console.log("tree", this.treeData);
           }
         }).catch(err => console.log(err))
     },
@@ -415,7 +414,6 @@ export default {
         } else {
           this.formatTree(item.children)
         }
-        console.log(this.dynamicTags);
       })
     },
     copySign() {
@@ -581,6 +579,7 @@ export default {
       this.studentInfo = this.selectionList[0] || {};
     },
     submitStudent() {
+      this.showAddStudent = false;
       console.log(this.studentInfo);
     },
   }

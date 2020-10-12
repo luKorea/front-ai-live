@@ -18,15 +18,6 @@
                @size-change="sizeChange"
                @refresh-change="refreshChange"
                @on-load="onLoad">
-      <template slot="menuLeft">
-        <el-button type="danger"
-                   size="small"
-                   icon="el-icon-delete"
-                   plain
-                   v-if="permission.member_delete"
-                   @click="handleDelete">删 除
-        </el-button>
-      </template>
     </avue-crud>
   </basic-container>
 </template>
@@ -53,92 +44,47 @@
           searchMenuSpan: 6,
           border: true,
           index: true,
-          viewBtn: true,
-          selection: true,
+          // viewBtn: true,
+          // selection: true,
           dialogClickModal: false,
           menu: false,
           column: [
-            {
-              label: "",
-              prop: "id",
-              rules: [{
-                required: true,
-                message: "请输入",
-                trigger: "blur"
-              }]
-            },
+            // {
+            //   label: "ID",
+            //   prop: "id"
+            // },
             {
               label: "手机号",
-              prop: "phone",
-              rules: [{
-                required: true,
-                message: "请输入手机号",
-                trigger: "blur"
-              }]
+              prop: "phone"
             },
             {
               label: "真实姓名",
-              prop: "name",
-              rules: [{
-                required: true,
-                message: "请输入真实姓名",
-                trigger: "blur"
-              }]
+              prop: "name"
             },
             {
               label: "微信名称",
-              prop: "nickname",
-              rules: [{
-                required: true,
-                message: "请输入微信名称",
-                trigger: "blur"
-              }]
+              prop: "nickname"
             },
             {
               label: "直播间id",
-              prop: "studioId",
-              rules: [{
-                required: true,
-                message: "请输入直播间id",
-                trigger: "blur"
-              }]
+              prop: "studioId"
             },
              {
               label: "课程名称",
-              prop: "courseTitle",
-              rules: [{
-                required: true,
-                message: "请输入直播间id",
-                trigger: "blur"
-              }]
+              prop: "courseTitle"
             },
 
             {
               label: "上课时长",
-              prop: "time",
-              rules: [{
-                required: true,
-                message: "请输入上课时长",
-                trigger: "blur"
-              }]
+              prop: "time"
             },
             {
               label: "意向程度",
-              prop: "intentionName",
-              rules: [{
-                required: true,
-                message: "请输入（1,2,3,4） 对应（A、B、C、D）",
-                trigger: "blur"
-              }]
+              prop: "intentionName"
             },
              {
               label: "销售姓名",
-              prop: "realName",
-              rules: [{
-                required: true,
-                message: "请输入上课时长",
-                trigger: "blur"
-              }]
+              prop: "realName"
             },
           ]
         },

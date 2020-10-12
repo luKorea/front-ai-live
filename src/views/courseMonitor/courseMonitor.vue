@@ -11,43 +11,92 @@
                @current-change="currentChange"
                @size-change="sizeChange"
                @refresh-change="refreshChange"
+               class="table"
                @on-load="onLoad">
       <template slot="menuLeft">
-        <el-button type="primary" size="small" @click='monitorUser'>查看课程
-        </el-button>
+        <el-button type="primary" size="small" @click='monitorUser'>查看课程监控</el-button>
       </template>
     </avue-crud>
 
     <el-dialog title="课程监控"
                :visible.sync="showModal"
                :close-on-click-modal="false"
-               :destroy-on-close="true"
+               @close="closeModal"
                width="80%">
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-card class="box-card" shadow="never">
-            <div slot="header" class="clearfix">
+        <!--预约课程同学列表-->
+        <el-col :span="6">
+          <el-card class="box-card user-item" shadow="never">
+            <div slot="header" class="clearfix" style="text-align: center">
               <span>预约课程同学列表</span>
             </div>
-            <div v-for="item in useData" :key="item.id" class="text item">
+            <div v-for="item in useData" :key="item.id"
+                 class="text item item-info">
               <span>{{ item.name }}</span>
               <span>{{ item.phone }}</span>
-              <span>{{ item.type }}</span>
+              <el-tag type="danger" size="mini" v-if="item.type === 0">在线
+              </el-tag>
+              <el-tag type="primary" size="mini" v-if="item.type === 1">离线
+              </el-tag>
             </div>
           </el-card>
         </el-col>
-        <el-col :span="14">
-          <el-card class="box-card" shadow="never">
-            <div slot="header" class="clearfix">
-              <span>第一课吉他基础原理</span>
-              <span>2020年09月05日</span>
-              <span style="float: right">类型: 录播</span>
-            </div>
-            <div v-for="info in infoData" :key='info.id' class="text item">
-              <span>{{ info.desc }}</span>
-              <span>{{ info.time }}</span>
-            </div>
-          </el-card>
+        <!--聊天记录-->
+        <el-col :span="18">
+          <el-col>
+            <el-card class="box-card message-info" shadow="never">
+              <div slot="header" class="clearfix">
+                <span
+                  style="font-size: 16px; font-weight: bold; margin-right: 20px">{{
+                    courseInfo.courseTitle
+                  }}</span>
+                <span>{{ courseInfo.datetime }}</span>
+                <span style="float: right">类型: {{ courseInfo.playType }}</span>
+              </div>
+              <div style="height: 216px; overflow: auto">
+                <div v-for="info in infoData" :key='info.id'
+                     class="text item item-info">
+                  <span>{{ info.desc }}</span>
+                  <span style="margin-right: 3px">{{ info.time }}</span>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+          <!--意向度-->
+          <el-col>
+            <el-card class="box-card" shadow="never">
+              <el-tag class="m-right">意向度</el-tag>
+              <el-select v-model="selectValue" placeholder="请选择"
+                         @change="selectOpt">
+                <el-option
+                  v-for="item in selectOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-card>
+          </el-col>
+          <!--管理员聊天-->
+          <el-col>
+            <el-card class="box-card" shadow="never">
+              <el-row :gutter="20">
+                <el-col :span="20">
+                  <el-input
+                    type="textarea"
+                    v-model="messageInfo"
+                    placeholder="可以联系我们的老师进行报名哦"
+                    :rows="5"
+                  />
+                </el-col>
+                <el-col :span="4">
+                  <el-button type="primary" style="margin-bottom: 35px">强制提醒发送
+                  </el-button>
+                  <el-button type="primary">普通发送</el-button>
+                </el-col>
+              </el-row>
+            </el-card>
+          </el-col>
         </el-col>
       </el-row>
     </el-dialog>
@@ -55,7 +104,6 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex";
 import {getList} from "@/api/course/course";
 
 export default {
@@ -68,6 +116,7 @@ export default {
         total: 0
       },
       option: {
+        addBtn: false,
         tip: false,
         border: true,
         index: true,
@@ -132,25 +181,25 @@ export default {
           id: 1,
           name: '张三',
           phone: '138******000',
-          type: '在线'
+          type: 0
         },
         {
           id: 2,
           name: '张三',
           phone: '138******000',
-          type: '在线'
+          type: 1
         },
         {
           id: 3,
           name: '张三',
           phone: '138******000',
-          type: '在线'
+          type: 0
         },
         {
           id: 4,
           name: '张三',
           phone: '138******000',
-          type: '在线'
+          type: 1
         }
       ],
       infoData: [
@@ -169,9 +218,43 @@ export default {
         {
           desc: '这个老师我好喜欢哦，讲的真好',
           time: new Date().toLocaleTimeString()
+        },
+        {
+          desc: '这个老师我好喜欢哦，讲的真好',
+          time: new Date().toLocaleTimeString()
+        },
+        {
+          desc: '这个老师我好喜欢哦，讲的真好',
+          time: new Date().toLocaleTimeString()
+        },
+        {
+          desc: '这个老师我好喜欢哦，讲的真好',
+          time: new Date().toLocaleTimeString()
         }
       ],
+      courseInfo: {},
       websock: null,
+      // 意向度设置
+      selectOptions: [
+        {
+          value: 'A',
+          label: 'A'
+        },
+        {
+          value: 'B',
+          label: 'B'
+        },
+        {
+          value: 'C',
+          label: 'C'
+        },
+        {
+          value: 'D',
+          label: 'D'
+        }],
+      selectValue: '',
+      // 管理员聊天
+      messageInfo: '',
     };
   },
   created() {
@@ -181,15 +264,6 @@ export default {
     this.websock.close() //离开路由之后断开websocket连接
   },
   computed: {
-    ...mapGetters(["permission"]),
-    permissionList() {
-      return {
-        addBtn: this.vaildData(this.permission.member_add, false),
-        viewBtn: this.vaildData(this.permission.member_view, false),
-        delBtn: this.vaildData(this.permission.member_delete, false),
-        editBtn: this.vaildData(this.permission.member_edit, false)
-      };
-    },
     ids() {
       let ids = [];
       this.selectionList.forEach(ele => {
@@ -226,8 +300,17 @@ export default {
       console.log('断开连接', e);
     },
     monitorUser(row) {
+      if (this.selectionList.length === 0) {
+        this.$message.warning("请选择至少一条数据");
+        return;
+      } else if (this.selectionList.length > 1) {
+        this.$message.warning("最多只能同时选择一条");
+        return;
+      }
       this.showModal = true;
+      this.courseInfo = this.selectionList[0] || {};
       console.log(row);
+      console.log(this.courseInfo);
     },
     searchReset() {
       this.query = {};
@@ -265,9 +348,33 @@ export default {
         this.selectionClear();
       });
     },
+    // 设置意向度
+    selectOpt(value) {
+      console.log(value);
+    },
+    // 关闭窗口
+    closeModal() {
+      this.selectionClear()
+    }
   }
 };
 </script>
 
-<style>
+<style scoped>
+.item-info {
+  display: flex;
+  text-align: center;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.user-item {
+  height: 540px;
+  overflow: auto;
+}
+
+.message-info {
+  height: 274px;
+}
+
 </style>

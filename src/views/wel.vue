@@ -1,14 +1,9 @@
 <template>
-  <basic-container>
-    <el-row>
-      <el-col :span="16">
-        <el-collapse v-model="activeNames" @change="handleChange">
-        
-        </el-collapse>
-      </el-col>
-      
-    </el-row>
-  </basic-container>
+    <div class="container">
+      <el-card class="wrap">
+        <img src="./logo.png" alt="">
+      </el-card>
+    </div>
 </template>
 
 <script>
@@ -35,3 +30,20 @@
   };
 </script>
 
+<style scoped>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+}
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+</style>

@@ -1,40 +1,42 @@
 <template>
   <div class="menu-wrapper">
-    <template v-for="item in menu">
-      <el-menu-item v-if="validatenull(item[childrenKey]) && vaildRoles(item)"
-                    :index="item[pathKey]"
-                    @click="open(item)"
-                    :key="item[labelKey]"
-                    :class="{'is-active':vaildAvtive(item)}">
-        <i :class="item[iconKey]"></i>
-        <span slot="title"
-              :alt="item[pathKey]">{{generateTitle(item)}}</span>
-      </el-menu-item>
-      <el-submenu v-else-if="!validatenull(item[childrenKey])&&vaildRoles(item)"
-                  :index="item[pathKey]"
-                  :key="item[labelKey]">
-        <template slot="title">
+    <template v-for="(item, index) in menu">
+      <el-menu :key="index">
+        <el-menu-item v-if="validatenull(item[childrenKey]) && vaildRoles(item)"
+                      :index="item[pathKey]"
+                      @click="open(item)"
+                      :key="item[labelKey]"
+                      :class="{'is-active':vaildAvtive(item)}">
           <i :class="item[iconKey]"></i>
           <span slot="title"
-                :class="{'el-menu--display':collapse && first}">{{generateTitle(item)}}</span>
-        </template>
-        <template v-for="(child,cindex) in item[childrenKey]">
-          <el-menu-item :index="child[pathKey],cindex"
-                        @click="open(child)"
-                        :class="{'is-active':vaildAvtive(child)}"
-                        v-if="validatenull(child[childrenKey])"
-                        :key="child[labelKey]">
-            <i :class="child[iconKey]"></i>
-            <span slot="title">{{generateTitle(child)}}</span>
-          </el-menu-item>
-          <sidebar-item v-else
-                        :menu="[child]"
-                        :key="cindex"
-                        :props="props"
-                        :screen="screen"
-                        :collapse="collapse"></sidebar-item>
-        </template>
-      </el-submenu>
+                :alt="item[pathKey]">{{generateTitle(item)}}</span>
+        </el-menu-item>
+        <el-submenu v-else-if="!validatenull(item[childrenKey])&&vaildRoles(item)"
+                    :index="item[pathKey]"
+                    :key="item[labelKey]">
+          <template slot="title">
+            <i :class="item[iconKey]"></i>
+            <span slot="title"
+                  :class="{'el-menu--display':collapse && first}">{{generateTitle(item)}}</span>
+          </template>
+          <template v-for="(child,cindex) in item[childrenKey]">
+            <el-menu-item :index="child[pathKey],cindex"
+                          @click="open(child)"
+                          :class="{'is-active':vaildAvtive(child)}"
+                          v-if="validatenull(child[childrenKey])"
+                          :key="child[labelKey]">
+              <i :class="child[iconKey]"></i>
+              <span slot="title">{{generateTitle(child)}}</span>
+            </el-menu-item>
+            <sidebar-item v-else
+                          :menu="[child]"
+                          :key="cindex"
+                          :props="props"
+                          :screen="screen"
+                          :collapse="collapse"></sidebar-item>
+          </template>
+        </el-submenu>
+      </el-menu>
     </template>
   </div>
 </template>

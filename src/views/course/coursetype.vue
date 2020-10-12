@@ -18,15 +18,15 @@
                @size-change="sizeChange"
                @refresh-change="refreshChange"
                @on-load="onLoad">
-      <template slot="menuLeft">
-        <el-button type="danger"
-                   size="small"
-                   icon="el-icon-delete"
-                   plain
-                   v-if="permission.coursetype_delete"
-                   @click="handleDelete">删 除
-        </el-button>
-      </template>
+<!--      <template slot="menuLeft">-->
+<!--        <el-button type="danger"-->
+<!--                   size="small"-->
+<!--                   icon="el-icon-delete"-->
+<!--                   plain-->
+<!--                   v-if="permission.coursetype_delete"-->
+<!--                   @click="handleDelete">删 除-->
+<!--        </el-button>-->
+<!--      </template>-->
     </avue-crud>
   </basic-container>
 </template>
@@ -54,19 +54,25 @@
           border: true,
           index: true,
           viewBtn: true,
-          selection: true,
+          // selection: true,
           dialogClickModal: false,
           column: [
             {
               label: "上级课程类别",
               labelWidth: 150,
-              prop: "parentId",
               type: 'select',
+              hide: true,
+              prop: 'parentId',
               dicUrl: "/api/blade-courseType/dropDown",
               props: {
                 label: "courseTypeName",
-                value: 'parentId'
+                value: 'id'
               }
+            },
+            {
+              label: "上级课程类别",
+              display: false,
+              prop: 'parentName'
             },
             {
               label: "课程类别名称",
@@ -109,7 +115,7 @@
         }
         add({
           ...row,
-          parentId
+          parentId: parentId
         }).then(() => {
           this.onLoad(this.page);
           this.$message({

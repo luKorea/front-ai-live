@@ -17,6 +17,7 @@ export default {
   isFirstPage: false,
   fistPage: {
     label: "首页",
+    // TODO 修改默认打开页面
     value: "/wel/index",
     params: {},
     query: {},

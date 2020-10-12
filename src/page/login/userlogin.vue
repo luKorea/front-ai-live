@@ -59,8 +59,8 @@
         tenantMode: website.tenantMode,
         loginForm: {
           tenantId: "000000",
-          username: "admin",
-          password: "admin",
+          username: "",
+          password: "",
           type: "account"
         },
         loginRules: {

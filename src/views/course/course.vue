@@ -34,12 +34,12 @@
         <el-button type="primary"
                    size="small"
                    v-if="permission.course_deblocking"
-                   @click="handleDeblocking">解锁
+                   @click="handleLocking(0)">解锁
         </el-button>
         <el-button type="primary"
                    size="small"
                    v-if="permission.course_lock"
-                   @click="handleLock">锁定
+                   @click="handleLocking(1)">锁定
         </el-button>
         <el-button type="danger"
                    size="small"
@@ -64,20 +64,21 @@
         <el-form-item label="直播ID">
           <el-input v-model="courseInfo.studioIds" disabled/>
         </el-form-item>
+        <el-form-item label="视频时长">
+          <el-input v-model="courseDuration" disabled/>
+        </el-form-item>
         <el-form-item label="课表时间" required>
           <el-date-picker
             class="m-right"
             v-model="courseInfo.day"
             type="date"
-            format="yyyy 年 MM 月 dd 日"
             value-format="yyyy-MM-dd"
             placeholder="选择日期"/>
           <el-time-picker
             class="m-right"
             v-model="courseInfo.startTime"
             placeholder="选择时间点"
-            format="HH 时 MM 分"
-            value-format="HH:MM"
+            value-format="HH:mm"
           />
           <el-button type="primary" @click="submitCourse">确 定</el-button>
         </el-form-item>
@@ -87,20 +88,16 @@
       <avue-crud :option="courseOption"
                  :table-loading="loading"
                  :data="tableData"
-                 :page.sync="coursePage"
-                 @row-del="delCourse"
-                 @selection-change="selectionChange1"
-                 @current-change="currentChange1"
-                 @size-change="sizeChange1"
+                 @row-del="courseDelete"
                  class="course-opt"
-                >
+                 style="height: 300px; overflow: auto"
+      >
       </avue-crud>
     </el-dialog>
     <!--  话术管理  -->
     <el-dialog title="话术管理"
                :visible.sync="showSpeechcraft"
                :close-on-click-modal="false"
-               :destroy-on-close="true"
                width="50%">
       <el-form label-width="120px" :model="speechcraftInfo">
         <el-form-item label="课程名称">
@@ -115,29 +112,29 @@
         <el-form-item label="话术插入时间" required>
           <el-time-picker
             class="m-right"
-            v-model="speechcraftInfo.courseTime"
+            v-model="speechcraftInfo.time"
             placeholder="选择时间点"
-            format="HH 时 MM 分"
             value-format="HH:MM:SS"
           />
         </el-form-item>
         <el-form-item label="话术内容" required>
-          <el-input type="textarea" v-model="speechcraftInfo.content" />
+          <el-input type="textarea" v-model="speechcraftInfo.verbalContent"/>
         </el-form-item>
-        <el-button type="primary" class="m-right" @click="submitSpeechcraft">导入</el-button>
-        <el-button type="primary" class="m-right" @click="submitSpeechcraft">导出</el-button>
+        <el-button type="primary" class="m-right" @click="submitSpeechcraft">
+          导入
+        </el-button>
+        <el-button type="primary" class="m-right" @click="submitSpeechcraft">
+          导出
+        </el-button>
         <el-button type="primary" @click="submitSpeechcraft">确 定</el-button>
       </el-form>
       <el-divider/>
       <avue-crud :option="speechcraftOption"
                  :table-loading="loading"
                  :data="speechcraftData"
-                 :page.sync="speechcraftPage"
                  @row-del="speechcraftDelete"
-                 @selection-change="speechcraftSelectionChange"
-                 @current-change="speechcraftCurrentChange"
-                 @size-change="speechcraftSizeChange"
                  class="course-opt"
+                 style="height: 300px; overflow: auto"
       >
       </avue-crud>
     </el-dialog>
@@ -152,9 +149,15 @@ import {
   update,
   remove,
   courseEdit,
-  getCourseEdit
+  getCourseEdit,
+  removeCourse,
+  lockCourse,
+  speechcraftData,
+  speechcraftEdit,
+  removeSpeechcraft
 } from "@/api/course/course";
 import {mapGetters} from "vuex";
+import {formatSeconds} from "@/util/date";
 
 export default {
   data() {
@@ -184,7 +187,7 @@ export default {
             dicUrl: "/api/blade-courseType/tree",
             rules: [{
               required: true,
-              message: "请输入课程类别id",
+              message: "请输入课程类别",
               trigger: "blur"
             }],
             span: 24
@@ -208,6 +211,11 @@ export default {
             menu: false,
             loadText: '附件上传中，请稍等',
             drag: true,
+            rules: [{
+              required: true,
+              message: "请上传课程视频",
+              trigger: "blur"
+            }],
             propsHttp: {
               res: 'data'
             },
@@ -229,23 +237,29 @@ export default {
             }],
             rules: [{
               required: true,
-              trigger: "blur"
+              trigger: "blur",
+              message: "请选择课程状态",
             }]
           },
           {
             label: "是否直播",
             prop: "isReal",
             type: 'radio',
-            dicData: [{
-              label: '录播',
-              value: 2
-            }, {
-              label: '直播',
-              value: 1
-            }],
+            value: 2,
+            dicData: [
+              {
+                label: '录播',
+                value: 2
+              }
+            ],
+            // }, {
+            //   label: '直播',
+            //   value: 1
+            // }],
             rules: [{
               required: true,
-              trigger: "blur"
+              trigger: "blur",
+              message: '请选中课程类型'
             }]
           },
           {
@@ -254,8 +268,24 @@ export default {
             display: false
           },
           {
-            label:"课程表时间",
-            prop:"datetime",
+            label: '课程状态',
+            prop: 'isLockingName',
+            display: false,
+            type: 'select',
+            search: true,
+            dicData: [
+              {
+                label: '正常',
+                value: 0
+              }, {
+                label: '已锁定',
+                value: 1
+              }
+            ]
+          },
+          {
+            label: "课程表时间",
+            prop: "datetime",
             display: false
           },
         ]
@@ -270,21 +300,21 @@ export default {
         total: 0
       },
       speechcraftOption: {
+        editBtn: false,
+        index: true,
         column: [
           {
             label: '序号',
             prop: 'id',
-            display: false
+            hide: true
           },
           {
-            label:"日期",
-            prop:"day",
-            display: false
+            label: "时间",
+            prop: "time"
           },
           {
-            label:"话术内容",
-            prop:"startTime",
-            display: false
+            label: "话术内容",
+            prop: "verbalContent"
           },
         ]
       },
@@ -293,21 +323,21 @@ export default {
       showCourse: false,
       courseInfo: {},
       courseOption: {
+        editBtn: false,
+        index: true,
         column: [
           {
             label: '序号',
             prop: 'id',
-            display: false
+            hide: true
           },
           {
-            label:"日期",
-            prop:"day",
-            display: false
+            label: "日期",
+            prop: "day"
           },
           {
-            label:"开播时间",
-            prop:"startTime",
-            display: false
+            label: "开播时间",
+            prop: "startTime"
           },
         ]
       },
@@ -317,6 +347,7 @@ export default {
         total: 0
       },
       tableData: [],
+      courseDuration: ''
     };
   },
   computed: {
@@ -344,12 +375,17 @@ export default {
   methods: {
     rowSave(row, done, loading) {
       let {courseTypeName, vid, courseTitle, isEnable, isReal} = row;
+      console.log(vid);
       let courseTypeId = courseTypeName,
-        video = null;
-      vid.forEach(item => video = item.value)
+        video = null,
+        duration = null;
+      vid.forEach(item => {
+        video = item.label;
+        duration = item.value;
+      })
       console.log(courseTypeId);
       add({
-        courseTitle, courseTypeId, vid: video, isEnable, isReal
+        courseTitle, courseTypeId, vid: video, isEnable, isReal, duration
       }).then(() => {
         this.onLoad(this.page);
         this.$message({
@@ -376,6 +412,7 @@ export default {
       });
     },
     rowDel(row) {
+      console.log(row);
       this.$confirm("确定将选择数据删除?", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -429,6 +466,7 @@ export default {
       this.onLoad(this.page);
     },
     searchChange(params, done) {
+      console.log(params);
       this.query = params;
       this.page.currentPage = 1;
       this.onLoad(this.page, params);
@@ -451,6 +489,7 @@ export default {
       this.onLoad(this.page, this.query);
     },
     onLoad(page, params = {}) {
+      console.log(formatSeconds(90));
       this.loading = true;
       getList(page.currentPage, page.pageSize, Object.assign(params, this.query)).then(res => {
         const data = res.data.data;
@@ -458,6 +497,7 @@ export default {
         this.data = data.records;
         this.loading = false;
         this.selectionClear();
+        console.log(this.data);
       });
     },
     //  TODO 排课管理
@@ -480,23 +520,6 @@ export default {
         this.selectionClear();
       });
     },
-    delCourse(row) {
-      this.$confirm("确定将选择数据删除?", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      })
-        .then(() => {
-          return remove(row.id);
-        })
-        .then(() => {
-          // this.onLoad(this.page);
-          this.$message({
-            type: "success",
-            message: "操作成功!"
-          });
-        });
-    },
     handleCourse() {
       if (this.selectionList.length === 0) {
         this.$message.warning("请选择至少一条数据");
@@ -507,34 +530,55 @@ export default {
       }
       this.showCourse = true;
       this.courseInfo = this.selectionList[0] || {};
+
+      this.courseDuration = formatSeconds(this.courseInfo.duration)
       console.log(this.courseInfo);
       this.onLoadCourse(this.courseInfo.id);
     },
     submitCourse() {
+      console.log(this.courseInfo.day);
+      console.log(this.courseInfo.startTime);
+      if (this.courseInfo.day === undefined || !this.courseInfo.day) {
+        this.$message.error('请录入日期')
+        return;
+      }
+      if (this.courseInfo.startTime === undefined || !this.courseInfo.startTime) {
+        this.$message.error('请录入时间')
+        return;
+      }
       const data = {
         startTime: this.courseInfo.startTime,
         courseId: this.courseInfo.id,
-        day: this.courseInfo.day
+        day: this.courseInfo.day,
+        // dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`
       }
       courseEdit(data)
-      .then(res => {
-        if (res.data.code === 200) {
-          this.$message.success('操作成功')
-          this.onLoadCourse(this.courseInfo.id)
-        }
-      }).catch(err => {
+        .then(res => {
+          if (res.data.code === 200) {
+            this.$message.success('操作成功')
+            this.onLoadCourse(this.courseInfo.id)
+          }
+        }).catch(err => {
         console.log(err);
       })
     },
     courseDelete(row) {
+      console.log(row);
+      console.log(this.courseInfo);
       this.$confirm("确定将选择数据删除?", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
       })
         .then(() => {
-          console.log(row);
-        })
+          return removeCourse(row.id)
+        }).then(() => {
+        this.onLoadCourse(this.courseInfo.id);
+        this.$message({
+          type: "success",
+          message: "操作成功!"
+        });
+      });
     },
     // TODO 话术管理
     speechcraftCurrentChange(currentPage) {
@@ -548,7 +592,7 @@ export default {
     },
     onLoadSpeechcraft(courseId) {
       this.loading = true;
-      getCourseEdit(courseId).then(res => {
+      speechcraftData(courseId).then(res => {
         const data = res.data.data;
         this.speechcraftPage.total = data.total;
         this.speechcraftData = data.records;
@@ -563,17 +607,15 @@ export default {
         type: "warning"
       })
         .then(() => {
-          return remove(row.id);
-        })
-        .then(() => {
-          // this.onLoad(this.page);
-          this.$message({
-            type: "success",
-            message: "操作成功!"
-          });
+          return removeSpeechcraft(row.id)
+        }).then(() => {
+        this.onLoadSpeechcraft(this.speechcraftInfo.id);
+        this.$message({
+          type: "success",
+          message: "操作成功!"
         });
+      });
     },
-
     handleSpeechcraft() {
       if (this.selectionList.length === 0) {
         this.$message.warning("请选择至少一条数据");
@@ -587,10 +629,33 @@ export default {
       this.onLoadSpeechcraft(this.speechcraftInfo.id);
     },
     submitSpeechcraft() {
-      console.log(this.speechcraftInfo);
+      if (this.speechcraftInfo.time === undefined || !this.speechcraftInfo.time) {
+        this.$message.error('请录入时间')
+        return;
+      }
+      if (this.speechcraftInfo.verbalContent === undefined || !this.speechcraftInfo.verbalContent) {
+        this.$message.error('请输入话术内容')
+        return;
+      }
+      const data = {
+        time: this.speechcraftInfo.time,
+        courseId: this.speechcraftInfo.id,
+        verbalContent: this.speechcraftInfo.verbalContent,
+      }
+      speechcraftEdit(data)
+        .then(res => {
+          if (res.data.code === 200) {
+            this.$message.success('操作成功')
+            // this.speechcraftInfo.verbalContent = '';
+            this.onLoadSpeechcraft(this.speechcraftInfo.id)
+          }
+        }).catch(err => {
+        console.log(err);
+      })
     },
     // TODO 解锁，锁定
-    handleDeblocking() {
+    handleLocking(isLocking) {
+      let type = isLocking === 0 ? '解锁' : '锁定';
       if (this.selectionList.length === 0) {
         this.$message.warning("请选择至少一条数据");
         return;
@@ -598,38 +663,16 @@ export default {
         this.$message.warning("最多只能同时选择一条");
         return;
       }
-      this.$confirm(" 您即将为选中课程进行解锁, 解锁后课程可进行正常播放", {
+      this.$confirm(`您即将为选中课程${type}进行, ${type}后课程会有一定的影响`, {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
       })
         .then(() => {
-          return remove(this.ids);
-        })
-        .then(() => {
-          this.onLoad(this.page);
-          this.$message({
-            type: "success",
-            message: "操作成功!"
-          });
-          this.$refs.crud.toggleSelection();
-        });
-    },
-    handleLock() {
-      if (this.selectionList.length === 0) {
-        this.$message.warning("请选择至少一条数据");
-        return;
-      } else if (this.selectionList.length > 1) {
-        this.$message.warning("最多只能同时选择一条");
-        return;
-      }
-      this.$confirm("您选中的课程即将被锁定!锁定后课程无法进行播放", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      })
-        .then(() => {
-          return remove(this.ids);
+          return lockCourse({
+            isLocking,
+            id: this.selectionList[0].id
+          })
         })
         .then(() => {
           this.onLoad(this.page);
