@@ -104,7 +104,7 @@
 </template>
 
 <script>
-import {getList} from "@/api/course/course";
+import {getList} from "@/api/studio/studio";
 
 export default {
   data() {
@@ -124,53 +124,43 @@ export default {
         menu: false,
         dialogClickModal: false,
         column: [
-          // TODO 获取课程类别
+          {
+            label: "直播间ID",
+            prop: "id",
+            search: true,
+            rules: [{
+              required: true,
+              message: "请输入课程id",
+              trigger: "blur"
+            }]
+          },
+          {
+            label: "视频地址",
+            prop: "classAddress"
+          },
           {
             label: "课程名称",
-            prop: "courseTitle"
-          },
-          {
-            label: "是否启用",
-            prop: "isEnable",
-            type: 'radio',
-            dicData: [{
-              label: '启用',
-              value: 2
-            }, {
-              label: '停用',
-              value: 1
-            }],
+            prop: "courseTitle",
             rules: [{
               required: true,
+              message: "请输入直播间地址",
               trigger: "blur"
             }]
           },
           {
-            label: "是否直播",
-            prop: "isReal",
-            type: 'radio',
-            dicData: [{
-              label: '录播',
-              value: 2
-            }, {
-              label: '直播',
-              value: 1
-            }],
+            label: "课程类别",
+            prop: "courseTypeName",
             rules: [{
               required: true,
+              message: "请输入直播间地址",
               trigger: "blur"
             }]
           },
           {
-            label: '直播间ID',
-            prop: 'studioIds',
+            label: "创建时间",
+            prop: "createTime",
             display: false
-          },
-          {
-            label: "课程表时间",
-            prop: "datetime",
-            display: false
-          },
+          }
         ]
       },
       data: [],

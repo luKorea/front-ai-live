@@ -19,13 +19,6 @@
                @refresh-change="refreshChange"
                @on-load="onLoad">
       <template slot="menuLeft">
-        <el-button type="danger"
-                   size="small"
-                   icon="el-icon-delete"
-                   plain
-                   v-if="permission.studio_delete"
-                   @click="handleDelete">删 除
-        </el-button>
         <el-button type="primary"
                    size="small"
                    icon="el-icon-user"
@@ -71,6 +64,7 @@
             node-key="key"
             :render-after-expand="false"
             @node-click="handleTree"
+            style="font-weight: bold"
           />
           <div>
             <el-tag style="margin-bottom: 10px">课程直播时间</el-tag>
@@ -93,7 +87,8 @@
                             maxlength="11"/>
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="submitStudio(1)">保存</el-button>
+                  <el-button type="primary" @click="submitStudio(1)">保存
+                  </el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
                   <el-input v-model="signStudio.url" type="textarea" disabled/>
@@ -119,7 +114,8 @@
                   />
                 </el-form-item>
                 <el-form-item>
-                  <el-button type="primary" @click="submitStudio(2)">保存</el-button>
+                  <el-button type="primary" @click="submitStudio(2)">保存
+                  </el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
                   <el-input v-model="moreStudio.url" type="textarea" disabled/>
@@ -140,17 +136,37 @@
 
 
     <!--  追加学员  -->
-    <el-dialog title="添加学员"
+
+    <el-dialog title="追加学员"
                :visible.sync="showAddStudent"
                :close-on-click-modal="false"
                width="50%">
       <el-form label-width="80px" :model="studentInfo">
-<!--        <el-form-item label="课程名称">-->
-<!--          <el-input v-model="studentInfo.courseTitle" disabled/>-->
-<!--        </el-form-item>-->
-        未实现
-        <el-button type="primary" @click="submitStudent">确 定</el-button>
+        <el-form-item label="追加学员" required>
+          <el-row :gutter="10">
+            <el-col :span="20">
+              <el-input
+                v-model="studentInfo.phone"
+                type="textarea"
+                :rows="6"
+                :cols="4"
+              />
+            </el-col>
+            <el-button type="primary" @click="submitStudent">确 定</el-button>
+          </el-row>
+        </el-form-item>
       </el-form>
+      <el-divider/>
+
+<!--     @row-del="studentDelete"-->
+      <avue-crud :option="studentOpt"
+                 :table-loading="studentLoading"
+                 :data="studentData"
+                 ref="studentRef"
+                 class="course-opt"
+                 style="height: 300px; overflow: auto"
+      >
+      </avue-crud>
     </el-dialog>
   </basic-container>
 </template>
@@ -162,7 +178,12 @@ import {
   add,
   update,
   remove,
-  getTree, getTreeChildren, openStudio, sendStudioAddress
+  getTree,
+  getTreeChildren,
+  openStudio,
+  sendStudioAddress,
+  getStudent,
+  appendStudent
 } from "@/api/studio/studio";
 import {mapGetters} from "vuex";
 import Clipboard from 'clipboard';
@@ -187,12 +208,14 @@ export default {
         index: true,
         viewBtn: true,
         selection: true,
+        addBtn: false,
+        align: 'center',
         dialogClickModal: false,
-        menu:false,
+        menu: false,
         column: [
           {
             label: "直播间ID",
-            prop: "courseId",
+            prop: "id",
             search: true,
             rules: [{
               required: true,
@@ -203,6 +226,11 @@ export default {
           {
             label: "视频地址",
             prop: "classAddress"
+          },
+          {
+            label: '直播间类型',
+            prop: 'studioTypeName',
+            display: false
           },
           {
             label: "课程名称",
@@ -257,7 +285,35 @@ export default {
         label: 'label'
       },
       dynamicTags: [],
-      selectData: []
+      selectData: [],
+      // 追加学员
+      studentOpt: {
+        editBtn: false,
+        border: true,
+        index: true,
+        viewBtn: false,
+        addBtn: false,
+        menu: false,
+        align: 'center',
+        column: [
+          {
+            label: '序号',
+            prop: 'id'
+          },
+          {
+            label: "手机号码",
+            prop: "phone"
+          }
+        ]
+      },
+      studentData: [],
+      studentQuery: {},
+      studentLoading: true,
+      studentPage: {
+        pageSize: 100,
+        currentPage: 1,
+        total: 0
+      },
     };
   },
   computed: {
@@ -409,7 +465,7 @@ export default {
     },
     formatTree(data) {
       data.map((item) => {
-        if(!item.children || item.children.length === 0) {
+        if (!item.children || item.children.length === 0) {
           this.dynamicTags.push(item.label)
         } else {
           this.formatTree(item.children)
@@ -459,11 +515,11 @@ export default {
       this.dynamicTags.forEach(item => {
         if (data.label === item) {
           getTreeChildren(data.id)
-          .then(res => {
-            if (res.data.code === 200) {
-              this.selectData = res.data.data;
-            }
-          }).catch(err => console.log(err))
+            .then(res => {
+              if (res.data.code === 200) {
+                this.selectData = res.data.data;
+              }
+            }).catch(err => console.log(err))
         }
       })
     },
@@ -472,17 +528,17 @@ export default {
       this.selectData.map((item) => {
         if (this.cascaderInfo[0] === item.value) {
           sendStudioAddress(item.vid)
-          .then(res => {
-            if (res.data.code === 200) {
-              if (this.activeName === 'first') {
-                this.signStudio.url = res.data.data.url;
-                this.signStudio.code = res.data.data.code;
-              } else {
-                this.moreStudio.url = res.data.data.url;
-                this.moreStudio.code = res.data.data.code;
+            .then(res => {
+              if (res.data.code === 200) {
+                if (this.activeName === 'first') {
+                  this.signStudio.url = res.data.data.url;
+                  this.signStudio.code = res.data.data.code;
+                } else {
+                  this.moreStudio.url = res.data.data.url;
+                  this.moreStudio.code = res.data.data.code;
+                }
               }
-            }
-          }).catch(err => {
+            }).catch(err => {
             console.log(err);
           })
         }
@@ -512,18 +568,17 @@ export default {
                 }
                 console.log(data);
                 openStudio(data)
-                .then(res => {
-                  if(res.data.code === 200) {
-                    this.$message.success('开通成功')
-                    this.onLoad(this.page);
-                    this.showStudio = false;
-                  }
-                })
-                .catch(err => {
-                  console.log(err);
-                })
-              }
-              else {
+                  .then(res => {
+                    if (res.data.code === 200) {
+                      this.$message.success('开通成功')
+                      this.onLoad(this.page);
+                      this.showStudio = false;
+                    }
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  })
+              } else {
                 let {phone} = this.moreStudio;
                 if (phone === null) {
                   this.$message.error('请输入手机号码')
@@ -537,7 +592,7 @@ export default {
                 })
                 let data = {
                   memberList: newsPhone,
-                  studioType: 1,
+                  studioType: 2,
                   courseId: item.value,
                   scheduleId: i.id,
                   classAddress: this.moreStudio.url,
@@ -546,7 +601,7 @@ export default {
                 console.log(data);
                 openStudio(data)
                   .then(res => {
-                    if(res.data.code === 200) {
+                    if (res.data.code === 200) {
                       this.$message.success('开通成功')
                       this.onLoad(this.page);
                       this.showStudio = false;
@@ -561,11 +616,28 @@ export default {
         }
       })
     },
-    // TODO 追加学员
     handleClick() {
       this.cascaderInfo = [];
       this.moreStudio.url = '';
       this.signStudio.url = '';
+    },
+    // 追加学员操作
+    onLoadStudent(page, params = {}) {
+      this.studentLoading = true;
+      getStudent(page.currentPage, page.pageSize, Object.assign(params, this.studentQuery)).then(res => {
+        const data = res.data.data;
+        this.studentPage.total = data.total;
+        this.studentData = data.records;
+        this.studentLoading = false;
+        console.log(data);
+        this.selectionClear();
+      });
+    },
+    currentStudentChange(currentPage) {
+      this.studentPage.currentPage = currentPage;
+    },
+    sizeStudentChange(pageSize) {
+      this.studentPage.pageSize = pageSize;
     },
     handleAddStudent() {
       if (this.selectionList.length === 0) {
@@ -574,17 +646,61 @@ export default {
       } else if (this.selectionList.length > 1) {
         this.$message.warning("最多只能同时选择一条");
         return;
+      } else if (this.selectionList[0].studioType === 1) {
+        this.$message.error('该直播间为单间直播间，不允许追加学员，请选择多人直播间')
+        return;
       }
       this.showAddStudent = true;
       this.studentInfo = this.selectionList[0] || {};
+      console.log(this.studentInfo);
+      this.onLoadStudent(this.studentPage, {
+        studioId: this.studentInfo.id
+      })
     },
     submitStudent() {
-      this.showAddStudent = false;
-      console.log(this.studentInfo);
+      let {phone} = this.studentInfo;
+      if (phone === null) {
+        this.$message.error('请输入手机号码')
+        return
+      }
+      let newPhone = phone.split(/[\s\n]/);
+      let newsPhone = newPhone.map(item => {
+        return {
+          phone: item,
+          studioId: this.studentInfo.id
+        }
+      })
+      let data = {
+        ...this.studentInfo,
+        memberList: newsPhone,
+      }
+      appendStudent(data)
+        .then(res => {
+          if (res.data.code === 200) {
+            this.$message.success('追加学员成功')
+            this.studentInfo.phone = [];
+            this.onLoadStudent(this.studentPage, {
+              studioId: this.studentInfo.id
+            })
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        })
     },
+    studentDelete(row) {
+      console.log(row);
+    }
   }
 };
 </script>
 
-<style>
+<style scoped>
+.el-tree-node__content .el-tree-node__label {
+  font-weight: bold !important;
+}
+
+.course-opt .avue-crud__menu {
+  display: none;
+}
 </style>

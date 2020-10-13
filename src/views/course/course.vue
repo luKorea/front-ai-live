@@ -114,7 +114,7 @@
             class="m-right"
             v-model="speechcraftInfo.time"
             placeholder="选择时间点"
-            value-format="HH:MM:SS"
+            value-format="HH:mm:ss"
           />
         </el-form-item>
         <el-form-item label="话术内容" required>
@@ -245,17 +245,16 @@ export default {
             label: "是否直播",
             prop: "isReal",
             type: 'radio',
-            value: 2,
+            valueDefault: 2,
             dicData: [
               {
                 label: '录播',
                 value: 2
-              }
-            ],
-            // }, {
-            //   label: '直播',
-            //   value: 1
-            // }],
+
+            }, {
+              label: '直播',
+              value: 1
+            }],
             rules: [{
               required: true,
               trigger: "blur",

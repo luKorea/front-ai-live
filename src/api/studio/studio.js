@@ -83,3 +83,26 @@ export const sendStudioAddress = (vid) => {
     }
   })
 }
+
+
+// 获取追加学院
+export const getStudent = (current, size, params) => {
+  return request({
+    url: '/api/blade-member/studioMemberPage',
+    method: 'get',
+    params: {
+      ...params,
+      current,
+      size,
+    }
+  })
+}
+
+// 追加学员
+export const appendStudent = (data) => {
+  return request({
+    url: '/api/blade-studio/append',
+    method: 'post',
+    data
+  })
+}

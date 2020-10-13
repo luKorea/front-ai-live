@@ -44,6 +44,7 @@
           searchMenuSpan: 6,
           border: true,
           index: true,
+          addBtn: false,
           // viewBtn: true,
           // selection: true,
           dialogClickModal: false,
