@@ -56,7 +56,8 @@
             // },
             {
               label: "手机号",
-              prop: "phone"
+              prop: "phone",
+              search: true
             },
             {
               label: "真实姓名",
@@ -81,7 +82,25 @@
             },
             {
               label: "意向程度",
-              prop: "intentionName"
+              prop: "intentionName",
+              display: false,
+              type: 'select',
+              search: true,
+              dicData: [
+              {
+                label: 'A',
+                value: 1
+              }, {
+                label: 'B',
+                value: 2
+              }, {
+                label: 'C',
+                value: 3
+              }, {
+                label: 'D',
+                value: 4
+              }
+            ]
             },
              {
               label: "销售姓名",

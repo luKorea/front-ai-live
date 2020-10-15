@@ -78,6 +78,7 @@
               label: "课程类别名称",
               labelWidth: 150,
               prop: "courseTypeName",
+              search: true,
               rules: [{
                 required: true,
                 message: "请输入",
