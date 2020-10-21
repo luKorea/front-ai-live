@@ -2,13 +2,20 @@ import request from '@/router/axios';
 
 export const getList = (current, size, params) => {
   return request({
-    url: '/api/blade-courseType/page',
+    url: '/api/blade-courseType/list',
     method: 'get',
     params: {
       ...params,
       current,
       size,
     }
+  })
+}
+
+export const getTypeTree = () => {
+  return request({
+    url: '/api/blade-courseType/pageTree',
+    method: 'get'
   })
 }
 
@@ -48,3 +55,11 @@ export const update = (row) => {
   })
 }
 
+
+
+export const getTreeData = () => {
+  return request({
+    url:'/api/blade-courseType/pageTree',
+    method: 'get'
+  })
+}

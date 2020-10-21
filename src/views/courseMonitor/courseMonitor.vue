@@ -1,117 +1,117 @@
 <template>
-  <basic-container>
-    <avue-crud :option="option"
-               :table-loading="loading"
-               :data="data"
-               :page.sync="page"
-               ref="crud"
-               @search-change="searchChange"
-               @search-reset="searchReset"
-               @selection-change="selectionChange"
-               @current-change="currentChange"
-               @size-change="sizeChange"
-               @refresh-change="refreshChange"
-               class="table"
-               @on-load="onLoad">
-      <template slot="menuLeft">
-        <el-button type="primary" size="small" @click='monitorUser'>查看课程监控</el-button>
-      </template>
-    </avue-crud>
-
-    <el-dialog title="课程监控"
-               :visible.sync="showModal"
-               :close-on-click-modal="false"
-               @close="closeModal"
-               width="80%">
-      <el-row :gutter="20">
-        <!--预约课程同学列表-->
-        <el-col :span="6">
-          <el-card class="box-card user-item" shadow="never">
-            <div slot="header" class="clearfix" style="text-align: center">
-              <span>预约课程同学列表</span>
-            </div>
-            <div v-for="item in useData" :key="item.id"
-                 class="text item item-info">
-              <span>{{ item.name }}</span>
-              <span>{{ item.phone }}</span>
-              <el-tag type="danger" size="mini" v-if="item.type === 0">在线
-              </el-tag>
-              <el-tag type="primary" size="mini" v-if="item.type === 1">离线
-              </el-tag>
-            </div>
-          </el-card>
-        </el-col>
-        <!--聊天记录-->
-        <el-col :span="18">
-          <el-col>
-            <el-card class="box-card message-info" shadow="never">
-              <div slot="header" class="clearfix">
+  <div style="height: 100%">
+    <el-tabs
+      tab-position="left"
+      style="height: 100%;"
+      v-model="activeName"
+      type='border-card'
+      class="tab"
+      @tab-click="handleClick">
+      <el-tab-pane v-for="item in data" :key="item.id" :label="item.courseTitle"
+                   :name="item.code">
+        <el-row :gutter="20" style="position: fixed">
+          <!--预约课程同学列表-->
+          <el-col :span="6">
+            <el-card class="box-card user-item" shadow="never"
+                     style="height: 100%">
+              <div slot="header" class="clearfix" style="text-align: center">
+                <span>预约课程同学列表</span>
+              </div>
+              <div v-for="item in useData" :key="item.id"
+                   class="text item item-info">
+                <span>{{ item.name }}</span>
+                <span>{{ item.phone }}</span>
+                <el-tag type="danger" size="mini" v-if="item.type === 0">在线
+                </el-tag>
+                <el-tag type="primary" size="mini" v-if="item.type === 1">离线
+                </el-tag>
+              </div>
+            </el-card>
+          </el-col>
+          <!--聊天记录-->
+          <el-col :span="18">
+            <el-col>
+              <el-card class="box-card message-info" shadow="never"
+                       style="height: 100%;overflow: auto">
+                <div slot="header" class="clearfix">
                 <span
                   style="font-size: 16px; font-weight: bold; margin-right: 20px">{{
                     courseInfo.courseTitle
                   }}</span>
-                <span>{{ courseInfo.datetime }}</span>
-                <span style="float: right">类型: {{ courseInfo.playType }}</span>
-              </div>
-              <div style="height: 216px; overflow: auto">
-                <div v-for="info in infoData" :key='info.id'
-                     class="text item item-info">
-                  <span>{{ info.desc }}</span>
-                  <span style="margin-right: 3px">{{ info.time }}</span>
+                  <span>{{ courseInfo.daytime }}</span>
+                  <span style="float: right">类型: {{
+                      courseInfo.studioTypeName
+                    }}</span>
                 </div>
-              </div>
-            </el-card>
-          </el-col>
-          <!--意向度-->
-          <el-col>
-            <el-card class="box-card" shadow="never">
-              <el-tag class="m-right">意向度</el-tag>
-              <el-select v-model="selectValue" placeholder="请选择"
-                         @change="selectOpt">
-                <el-option
-                  v-for="item in selectOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-card>
-          </el-col>
-          <!--管理员聊天-->
-          <el-col>
-            <el-card class="box-card" shadow="never">
-              <el-row :gutter="20">
-                <el-col :span="20">
-                  <el-input
-                    type="textarea"
-                    v-model="messageInfo"
-                    placeholder="可以联系我们的老师进行报名哦"
-                    :rows="5"
+                <div style="height: 216px; overflow: auto" ref="msg-box">
+                  <div v-for="info in infoData" :key='info.id'
+                       class="text item item-info">
+                    <span>{{ info.desc }}</span>
+                    <span style="margin-right: 3px">{{ info.time }}</span>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+            <!--意向度-->
+            <el-col>
+              <el-card class="box-card" shadow="never">
+                <el-tag class="m-right">意向度</el-tag>
+                <el-select v-model="selectValue" placeholder="请选择"
+                           @change="selectOpt">
+                  <el-option
+                    v-for="item in selectOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
                   />
-                </el-col>
-                <el-col :span="4">
-                  <el-button type="primary" style="margin-bottom: 35px">强制提醒发送
-                  </el-button>
-                  <el-button type="primary">普通发送</el-button>
-                </el-col>
-              </el-row>
-            </el-card>
+                </el-select>
+              </el-card>
+            </el-col>
+            <!--管理员聊天-->
+            <el-col>
+              <el-card class="box-card" shadow="never">
+                <el-row :gutter="20">
+                  <el-col :span="20">
+                    <el-input
+                      type="textarea"
+                      v-model="messageInfo"
+                      placeholder="可以联系我们的老师进行报名哦"
+                      :rows="5"
+                    />
+                  </el-col>
+                  <el-col :span="4">
+                    <el-button type="primary" style="margin-bottom: 35px">强制提醒发送
+                    </el-button>
+                    <el-button type="primary" @click="websocketsend">普通发送
+                    </el-button>
+                  </el-col>
+                </el-row>
+              </el-card>
+            </el-col>
           </el-col>
-        </el-col>
-      </el-row>
-    </el-dialog>
-  </basic-container>
+        </el-row>
+      </el-tab-pane>
+    </el-tabs>
+  </div>
 </template>
 
 <script>
 import {getList} from "@/api/studio/studio";
+import {getStore} from "@/util/store";
 
 export default {
   data() {
     return {
+      activeName: 'one',
+      // ws
+      messageId: "", //推送消息的id
+      userId: "1", //当前该设备用户id(消息推送接收者)
+      title: "", //消息标题
+      message: "", //消息
+      stompClient: null, //stomp
       loading: true,
       page: {
-        pageSize: 10,
+        pageSize: 1000,
         currentPage: 1,
         total: 0
       },
@@ -123,6 +123,7 @@ export default {
         selection: true,
         menu: false,
         dialogClickModal: false,
+        align: 'center',
         column: [
           {
             label: "直播间ID",
@@ -192,36 +193,8 @@ export default {
           type: 1
         }
       ],
-      infoData: [
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        },
-        {
-          desc: '这个老师我好喜欢哦，讲的真好',
-          time: new Date().toLocaleTimeString()
-        }
-      ],
+      infoData: [],
+      oldData: [],
       courseInfo: {},
       websock: null,
       // 意向度设置
@@ -245,10 +218,13 @@ export default {
       selectValue: '',
       // 管理员聊天
       messageInfo: '',
+      wsuri: 'ws://msg.liuyucn.com/api/websocket/',
+      code: '',
+      userName: '',
     };
   },
   created() {
-    // this.initWebSocket();
+    this.onLoad(this.page)
   },
   destroyed() {
     this.websock.close() //离开路由之后断开websocket连接
@@ -262,32 +238,67 @@ export default {
       return ids.join(",");
     }
   },
+  updated() {
+    this.scrollBottom();
+  },
   methods: {
     //初始化weosocket
-    initWebSocket() {
-      const wsuri = "ws://127.0.0.1:8080";
+    initWebSocket(wsuri) { //初始化weosocket
       this.websock = new WebSocket(wsuri);
+      console.log(this.websock);
       this.websock.onmessage = this.websocketonmessage;
       this.websock.onopen = this.websocketonopen;
       this.websock.onerror = this.websocketonerror;
       this.websock.onclose = this.websocketclose;
     },
-    websocketonopen() { //连接建立之后执行send方法发送数据
-      let actions = {"test": "12345"};
-      this.websocketsend(JSON.stringify(actions));
+    websocketonopen(e) { //连接建立之后执行send方法发送数据
+      this.websocketonmessage()
+      console.log(this.websock);
     },
     websocketonerror() {//连接建立失败重连
       this.initWebSocket();
     },
     websocketonmessage(e) { //数据接收
+      console.log(e);
       const redata = JSON.parse(e.data);
-      console.log(redata);
+      this.infoData = [
+        ...this.infoData,
+        {
+          desc: redata.message,
+          time: new Date().toLocaleTimeString()
+        }
+      ]
     },
-    websocketsend(Data) {//数据发送
-      this.websock.send(Data);
+    websocketsend() {//数据发送
+      const data = getStore({name: 'userInfo'})
+      const userName = data.account;
+      this.websock.send(JSON.stringify({
+        userName,
+        code: this.code,
+        message: this.messageInfo,
+        time: new Date().toLocaleTimeString()
+      }));
+      this.messageInfo = '';
     },
     websocketclose(e) {  //关闭
+      localStorage.removeItem('info')
       console.log('断开连接', e);
+    },
+    //滚动条到底部
+    scrollBottom() {
+      let el = this.$refs["msg-box"];
+      el.scrollTop = el.scrollHeight;
+    },
+    handleClick(tab) {
+      this.data.forEach(item => {
+        if (item.code === tab.name) {
+          this.courseInfo = item;
+          this.code = item.code;
+          this.initWebSocket(this.wsuri + item.code);
+        }
+        this.infoData = [];
+        this.websocketclose()
+      })
     },
     monitorUser(row) {
       if (this.selectionList.length === 0) {
@@ -298,35 +309,10 @@ export default {
         return;
       }
       this.showModal = true;
+      this.connect();
       this.courseInfo = this.selectionList[0] || {};
       console.log(row);
       console.log(this.courseInfo);
-    },
-    searchReset() {
-      this.query = {};
-      this.onLoad(this.page);
-    },
-    searchChange(params, done) {
-      this.query = params;
-      this.page.currentPage = 1;
-      this.onLoad(this.page, params);
-      done();
-    },
-    selectionChange(list) {
-      this.selectionList = list;
-    },
-    selectionClear() {
-      this.selectionList = [];
-      this.$refs.crud.toggleSelection();
-    },
-    currentChange(currentPage) {
-      this.page.currentPage = currentPage;
-    },
-    sizeChange(pageSize) {
-      this.page.pageSize = pageSize;
-    },
-    refreshChange() {
-      this.onLoad(this.page, this.query);
     },
     onLoad(page, params = {}) {
       this.loading = true;
@@ -334,8 +320,11 @@ export default {
         const data = res.data.data;
         this.page.total = data.total;
         this.data = data.records;
+        this.activeName = this.data[0].code || '';
+        this.courseInfo = this.data[0];
+        this.code = this.data[0].code;
+        this.initWebSocket(this.wsuri + this.data[0].code);
         this.loading = false;
-        this.selectionClear();
       });
     },
     // 设置意向度
@@ -347,7 +336,8 @@ export default {
       this.selectionClear()
     }
   }
-};
+}
+;
 </script>
 
 <style scoped>
@@ -359,7 +349,7 @@ export default {
 }
 
 .user-item {
-  height: 540px;
+  height: 100%;
   overflow: auto;
 }
 
@@ -367,4 +357,15 @@ export default {
   height: 274px;
 }
 
+.el-card .is-always-shadow {
+  height: 100% !important;
+}
+
+.el-card__body {
+  height: 100% !important;
+}
+
+.tab {
+  height: 100% !important;
+}
 </style>

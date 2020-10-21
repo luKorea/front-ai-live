@@ -43,17 +43,21 @@
           searchShow: true,
           searchMenuSpan: 6,
           border: true,
-          index: true,
           addBtn: false,
+          align: 'center',
           // viewBtn: true,
           // selection: true,
           dialogClickModal: false,
           menu: false,
           column: [
-            // {
-            //   label: "ID",
-            //   prop: "id"
-            // },
+            {
+              label: "ID",
+              prop: "id"
+            },
+            {
+              label: "直播间id",
+              prop: "studioId"
+            },
             {
               label: "手机号",
               prop: "phone",
@@ -68,8 +72,8 @@
               prop: "nickname"
             },
             {
-              label: "直播间id",
-              prop: "studioId"
+              label: '直播时间',
+              prop: 'dayTime'
             },
              {
               label: "课程名称",
@@ -80,6 +84,30 @@
               label: "上课时长",
               prop: "time"
             },
+             {
+              label: "销售姓名",
+              prop: "realName"
+            },
+            {
+              label: "开始时间",
+              prop: "startTime",
+              search: true,
+              type: 'datetime',
+              format: "yyyy-MM-dd hh:mm",
+              valueFormat: "yyyy-MM-dd hh:mm",
+              display: false,
+              hide: true,
+            },
+            {
+              label: "结束时间",
+              prop: "endTime",
+              search: true,
+              type: 'datetime',
+              format: "yyyy-MM-dd hh:mm",
+              valueFormat: "yyyy-MM-dd hh:mm",
+              display: false,
+              hide: true
+            },
             {
               label: "意向程度",
               prop: "intentionName",
@@ -87,24 +115,20 @@
               type: 'select',
               search: true,
               dicData: [
-              {
-                label: 'A',
-                value: 1
-              }, {
-                label: 'B',
-                value: 2
-              }, {
-                label: 'C',
-                value: 3
-              }, {
-                label: 'D',
-                value: 4
-              }
-            ]
-            },
-             {
-              label: "销售姓名",
-              prop: "realName"
+                {
+                  label: 'A',
+                  value: 1
+                }, {
+                  label: 'B',
+                  value: 2
+                }, {
+                  label: 'C',
+                  value: 3
+                }, {
+                  label: 'D',
+                  value: 4
+                }
+              ]
             },
           ]
         },

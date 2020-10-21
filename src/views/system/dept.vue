@@ -155,6 +155,7 @@
     },
     methods: {
       rowSave(row, loading, done) {
+        console.log(row);
         add(row).then(() => {
           loading();
           this.onLoad(this.page);

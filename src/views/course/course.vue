@@ -17,6 +17,8 @@
                @current-change="currentChange"
                @size-change="sizeChange"
                @refresh-change="refreshChange"
+               :upload-before="uploadBefore"
+               :upload-after="uploadAfter"
                @on-load="onLoad">
       <template slot="menuLeft">
         <el-button type="primary"
@@ -118,24 +120,31 @@
           />
         </el-form-item>
         <el-form-item label="话术内容" required>
-          <el-input type="textarea" v-model="speechcraftInfo.verbalContent"/>
+          <el-row :gutter="6">
+            <el-col :span="16">
+              <el-input type="textarea"
+                        v-model="speechcraftInfo.verbalContent"/>
+            </el-col>
+            <el-col :span="4">
+              <el-button type="primary" @click="submitSpeechcraft">确 定
+              </el-button>
+            </el-col>
+          </el-row>
+
         </el-form-item>
-        <el-button type="primary" class="m-right" @click="submitSpeechcraft">
-          导入
-        </el-button>
-        <el-button type="primary" class="m-right" @click="submitSpeechcraft">
-          导出
-        </el-button>
-        <el-button type="primary" @click="submitSpeechcraft">确 定</el-button>
       </el-form>
       <el-divider/>
       <avue-crud :option="speechcraftOption"
                  :table-loading="loading"
                  :data="speechcraftData"
                  @row-del="speechcraftDelete"
-                 class="course-opt"
                  style="height: 300px; overflow: auto"
       >
+        <template slot="menuLeft">
+          <el-button type="primary" size="small" icon="el-icon-upload2"
+                     @click="submitSpeechcraft">导入
+          </el-button>
+        </template>
       </avue-crud>
     </el-dialog>
   </basic-container>
@@ -157,6 +166,8 @@ import {
   removeSpeechcraft
 } from "@/api/course/course";
 import {mapGetters} from "vuex";
+import NProgress from 'nprogress' // progress bar
+import 'nprogress/nprogress.css' // progress bar style
 import {formatSeconds} from "@/util/date";
 
 export default {
@@ -174,12 +185,18 @@ export default {
       option: {
         tip: false,
         border: true,
-        index: true,
         viewBtn: true,
         selection: true,
         dialogClickModal: false,
+        dialogHeight: 500,
+        align: 'center',
         column: [
           // TODO 获取课程类别
+          {
+            label: 'ID',
+            prop: 'id',
+            display: false
+          },
           {
             label: "课程类别",
             prop: "courseTypeName",
@@ -209,8 +226,8 @@ export default {
             accept: "video/mp4",
             limit: 1,
             menu: false,
-            loadText: '附件上传中，请稍等',
             drag: true,
+            hide: true,
             rules: [{
               required: true,
               message: "请上传课程视频",
@@ -225,14 +242,15 @@ export default {
             prop: 'vid'
           },
           {
-            label: "是否启用",
-            prop: "isEnable",
+            label: "课程状态",
+            prop: "isLocking",
             type: 'radio',
+            hide: true,
             dicData: [{
-              label: '启用',
+              label: '解锁',
               value: 2
             }, {
-              label: '停用',
+              label: '锁定',
               value: 1
             }],
             rules: [{
@@ -251,20 +269,15 @@ export default {
                 label: '录播',
                 value: 2
 
-            }, {
-              label: '直播',
-              value: 1
-            }],
+              }, {
+                label: '直播',
+                value: 1
+              }],
             rules: [{
               required: true,
               trigger: "blur",
               message: '请选中课程类型'
             }]
-          },
-          {
-            label: '直播间ID',
-            prop: 'studioIds',
-            display: false
           },
           {
             label: '课程状态',
@@ -283,7 +296,12 @@ export default {
             ]
           },
           {
-            label: "课程表时间",
+            label: '直播间ID',
+            prop: 'studioIds',
+            display: false
+          },
+          {
+            label: "直播时间",
             prop: "datetime",
             display: false
           },
@@ -294,18 +312,19 @@ export default {
       showSpeechcraft: false,
       speechcraftInfo: {},
       speechcraftPage: {
-        pageSize: 10,
+        pageSize: 1000,
         currentPage: 1,
         total: 0
       },
       speechcraftOption: {
         editBtn: false,
-        index: true,
+        addBtn: false,
+        align: 'center',
+        excelBtn: true,
         column: [
           {
             label: '序号',
-            prop: 'id',
-            hide: true
+            prop: 'id'
           },
           {
             label: "时间",
@@ -323,12 +342,11 @@ export default {
       courseInfo: {},
       courseOption: {
         editBtn: false,
-        index: true,
+        align: 'center',
         column: [
           {
             label: '序号',
-            prop: 'id',
-            hide: true
+            prop: 'id'
           },
           {
             label: "日期",
@@ -341,7 +359,7 @@ export default {
         ]
       },
       coursePage: {
-        pageSize: 10,
+        pageSize: 1000,
         currentPage: 1,
         total: 0
       },
@@ -372,6 +390,19 @@ export default {
     }
   },
   methods: {
+    // 视频上传显示进度条
+    uploadBefore(file, done, loading) {
+      console.log(file)
+      done()
+      this.$NProgress.start()
+      this.$message.success('上传前的方法')
+    },
+    uploadAfter(res, done, loading) {
+      console.log(res)
+      done()
+      this.$NProgress.done();
+      this.$message.success('上传后的方法')
+    },
     rowSave(row, done, loading) {
       let {courseTypeName, vid, courseTitle, isEnable, isReal} = row;
       console.log(vid);
@@ -549,7 +580,7 @@ export default {
         startTime: this.courseInfo.startTime,
         courseId: this.courseInfo.id,
         day: this.courseInfo.day,
-        // dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`
+        dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`
       }
       courseEdit(data)
         .then(res => {

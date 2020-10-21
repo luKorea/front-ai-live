@@ -91,12 +91,12 @@
                   </el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
-                  <el-input v-model="signStudio.url" type="textarea" disabled/>
+                  <el-input v-model="signUrl" type="textarea" disabled/>
                 </el-form-item>
                 <el-form-item>
                   <el-button
                     class="tag-read"
-                    :data-clipboard-text="signStudio.url"
+                    :data-clipboard-text="signUrl"
                     @click="copySign">复制地址
                   </el-button>
                 </el-form-item>
@@ -118,12 +118,12 @@
                   </el-button>
                 </el-form-item>
                 <el-form-item label="上课地址">
-                  <el-input v-model="moreStudio.url" type="textarea" disabled/>
+                  <el-input v-model="moreUrl" type="textarea" disabled/>
                 </el-form-item>
                 <el-form-item>
                   <el-button
                     class="tag-more"
-                    :data-clipboard-text="moreStudio.url"
+                    :data-clipboard-text="moreUrl"
                     @click="copyMore">复制地址
                   </el-button>
                 </el-form-item>
@@ -158,7 +158,7 @@
       </el-form>
       <el-divider/>
 
-<!--     @row-del="studentDelete"-->
+      <!--     @row-del="studentDelete"-->
       <avue-crud :option="studentOpt"
                  :table-loading="studentLoading"
                  :data="studentData"
@@ -205,7 +205,6 @@ export default {
         searchShow: true,
         searchMenuSpan: 6,
         border: true,
-        index: true,
         viewBtn: true,
         selection: true,
         addBtn: false,
@@ -217,15 +216,12 @@ export default {
             label: "直播间ID",
             prop: "id",
             search: true,
+            sortable: true,
             rules: [{
               required: true,
               message: "请输入课程id",
               trigger: "blur"
             }]
-          },
-          {
-            label: "视频地址",
-            prop: "classAddress"
           },
           {
             label: '直播间类型',
@@ -251,10 +247,34 @@ export default {
             }]
           },
           {
-            label: "创建时间",
-            prop: "createTime",
-            display: false
-          }
+            label: '直播时间',
+            prop: 'daytime',
+            display: false,
+          },
+          {
+            label: "直播地址",
+            prop: "classAddress"
+          },
+          {
+            label: "开始时间",
+            prop: "startTime",
+            search: true,
+            type: 'datetime',
+            format: "yyyy-MM-dd hh:mm",
+            valueFormat: "yyyy-MM-dd hh:mm",
+            display: false,
+            hide: true
+          },
+          {
+            label: "结束时间",
+            prop: "endTime",
+            search: true,
+            type: 'datetime',
+            format: "yyyy-MM-dd hh:mm",
+            valueFormat: "yyyy-MM-dd hh:mm",
+            display: false,
+            hide: true
+          },
         ]
       },
       data: [],
@@ -273,6 +293,8 @@ export default {
         url: '',
         code: '',
       },
+      signUrl: '',
+      moreUrl: '',
       moreStudio: {
         phone: null,
         selectCourse: '',
@@ -564,6 +586,7 @@ export default {
                   courseId: item.value,
                   scheduleId: i.id,
                   classAddress: this.signStudio.url,
+                  // studioAddress: this.signStudio.url,
                   code: this.signStudio.code
                 }
                 console.log(data);
@@ -572,7 +595,10 @@ export default {
                     if (res.data.code === 200) {
                       this.$message.success('开通成功')
                       this.onLoad(this.page);
-                      this.showStudio = false;
+                      // this.signUrl.phone = null;
+                      this.signUrl = this.signStudio.url;
+                      this.signStudio.phone = null;
+                      // this.showStudio = false;
                     }
                   })
                   .catch(err => {
@@ -596,6 +622,7 @@ export default {
                   courseId: item.value,
                   scheduleId: i.id,
                   classAddress: this.moreStudio.url,
+                  // studioAddress: this.moreStudio.url,
                   code: this.moreStudio.code
                 }
                 console.log(data);
@@ -604,7 +631,10 @@ export default {
                     if (res.data.code === 200) {
                       this.$message.success('开通成功')
                       this.onLoad(this.page);
-                      this.showStudio = false;
+                      // this.moreStudio.phone = null;
+                      this.moreUrl = this.moreStudio.url;
+                      this.moreStudio.phone = null;
+                      // this.showStudio = false;
                     }
                   })
                   .catch(err => {
@@ -619,7 +649,11 @@ export default {
     handleClick() {
       this.cascaderInfo = [];
       this.moreStudio.url = '';
+      this.moreStudio.phone = null;
+      this.moreUrl = '';
       this.signStudio.url = '';
+      this.signStudio.phone = null;
+      this.signUrl = '';
     },
     // 追加学员操作
     onLoadStudent(page, params = {}) {
@@ -658,6 +692,10 @@ export default {
       })
     },
     submitStudent() {
+      // if (this.moreUrl === this.moreStudio.url || this.signUrl === this.signStudio.url) {
+      //   this.$message.info('请重新选择课程时间，已确保选择的日期正确')
+      //   return
+      // }
       let {phone} = this.studentInfo;
       if (phone === null) {
         this.$message.error('请输入手机号码')
