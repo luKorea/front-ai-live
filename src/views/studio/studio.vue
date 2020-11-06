@@ -105,7 +105,7 @@
 <!--            </el-tab-pane>-->
 
             <!--TODO 生成多人直播间 -->
-            <el-tab-pane label="生成多人直播间" name="second">
+            <el-tab-pane label="生成直播链接" name="second">
               <el-form v-model="moreStudio">
                 <el-form-item label="手机号码" prop="phone">
                   <el-input v-model="moreStudio.phone"

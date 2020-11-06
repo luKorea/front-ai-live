@@ -214,8 +214,8 @@ export default {
       selectValue: '',
       // 管理员聊天
       messageInfo: '',
-      // wsuri: 'ws://8.129.64.22:2829/webSocket/chat',
-      wsuri: 'ws://192.168.1.5:2829/webSocket/chat',
+      wsuri: 'ws://8.129.64.22:2829/webSocket/chat',
+      // wsuri: 'ws://192.168.1.5:2829/webSocket/chat',
       code: '',
       userName: '',
       adminPhone: ''

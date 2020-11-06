@@ -716,8 +716,10 @@ export default {
       const data = {
         startTime: this.courseInfo.startTime,
         courseId: this.courseInfo.id,
+        channelId: this.courseInfo.channelId,
         day: this.courseInfo.day,
-        dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`
+        dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`,
+        vid: this.courseInfo.vid
       }
       courseEdit(data)
         .then(res => {
