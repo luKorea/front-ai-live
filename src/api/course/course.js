@@ -54,7 +54,9 @@ export const getCourseEdit = (courseId) => {
     url: '/api/blade-schedule/page',
     method: 'get',
     params: {
-      courseId
+      courseId,
+      current: 1,
+      size: 100,
     }
   })
 }
@@ -95,7 +97,9 @@ export const speechcraftData = (courseId) => {
     url: '/api/blade-words/page',
     method: 'get',
     params: {
-      courseId
+      courseId,
+      current: 1,
+      size: 100,
     }
   })
 }
@@ -103,7 +107,7 @@ export const speechcraftData = (courseId) => {
 // 添加话术管理
 export const speechcraftEdit = (data) => {
   return request({
-    url: '/api/blade-words/save',
+    url: '/api/blade-words/submit',
     method: 'post',
     data: data
   })
@@ -117,5 +121,14 @@ export const removeSpeechcraft = (ids) => {
     params: {
       ids,
     }
+  })
+}
+
+
+// 获取树状结构
+export const getTreeData = () => {
+  return request({
+    url: '/api/blade-courseType/tree',
+    method: 'get'
   })
 }

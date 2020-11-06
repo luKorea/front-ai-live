@@ -1,15 +1,14 @@
 <template>
-  <div style="height: 100%">
+  <div>
     <el-tabs
       tab-position="left"
-      style="height: 100%;"
       v-model="activeName"
       type='border-card'
       class="tab"
       @tab-click="handleClick">
-      <el-tab-pane v-for="item in data" :key="item.id" :label="item.courseTitle"
+      <el-tab-pane v-for="item in data" :key="item.id" :label="`${item.courseTitle} ${item.daytime}`"
                    :name="item.code">
-        <el-row :gutter="20" style="position: fixed">
+        <el-row :gutter="20" v-show='showUserMessage'>
           <!--预约课程同学列表-->
           <el-col :span="6">
             <el-card class="box-card user-item" shadow="never"
@@ -18,13 +17,19 @@
                 <span>预约课程同学列表</span>
               </div>
               <div v-for="item in useData" :key="item.id"
-                   class="text item item-info">
-                <span>{{ item.name }}</span>
-                <span>{{ item.phone }}</span>
-                <el-tag type="danger" size="mini" v-if="item.type === 0">在线
-                </el-tag>
-                <el-tag type="primary" size="mini" v-if="item.type === 1">离线
-                </el-tag>
+                   class="text item item-info" @click="setYi(item.id)">
+                <el-tooltip class="item" effect="dark" content="点击设置用户意向度" placement="right-start">
+                  <el-button style="width: 100%">
+                    <div class="item-info-1">
+                      <span>{{ item.name }}</span>
+                      <span>{{ item.phone }}</span>
+<!--                      <el-tag type="danger" size="mini">在线-->
+<!--                      </el-tag>-->
+<!--                      <el-tag type="primary" size="mini" v-if="item.type === 1">离线-->
+<!--                      </el-tag>-->
+                    </div>
+                  </el-button>
+                </el-tooltip>
               </div>
             </el-card>
           </el-col>
@@ -39,39 +44,25 @@
                     courseInfo.courseTitle
                   }}</span>
                   <span>{{ courseInfo.daytime }}</span>
-                  <span style="float: right">类型: {{
-                      courseInfo.studioTypeName
-                    }}</span>
+<!--                  <span style="float: right">类型: {{-->
+<!--                      courseInfo.studioTypeName-->
+<!--                    }}</span>-->
                 </div>
-                <div style="height: 216px; overflow: auto" ref="msg-box">
+                <div style="height: 500px; overflow: auto" ref="msg-box">
                   <div v-for="info in infoData" :key='info.id'
                        class="text item item-info">
-                    <span>{{ info.desc }}</span>
-                    <span style="margin-right: 3px">{{ info.time }}</span>
+                    <span>{{ info.name }}</span>
+                    <span>{{ info.msg || info.content }}</span>
+                    <span style="margin-right: 20px">{{ info.sendTime }}</span>
                   </div>
                 </div>
-              </el-card>
-            </el-col>
-            <!--意向度-->
-            <el-col>
-              <el-card class="box-card" shadow="never">
-                <el-tag class="m-right">意向度</el-tag>
-                <el-select v-model="selectValue" placeholder="请选择"
-                           @change="selectOpt">
-                  <el-option
-                    v-for="item in selectOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </el-select>
               </el-card>
             </el-col>
             <!--管理员聊天-->
             <el-col>
               <el-card class="box-card" shadow="never">
                 <el-row :gutter="20">
-                  <el-col :span="20">
+                  <el-col :span="18">
                     <el-input
                       type="textarea"
                       v-model="messageInfo"
@@ -80,7 +71,7 @@
                     />
                   </el-col>
                   <el-col :span="4">
-                    <el-button type="primary" style="margin-bottom: 35px">强制提醒发送
+                    <el-button type="primary" style="margin-bottom: 35px" @click="websockSendMessage">强制提醒发送
                     </el-button>
                     <el-button type="primary" @click="websocketsend">普通发送
                     </el-button>
@@ -92,17 +83,42 @@
         </el-row>
       </el-tab-pane>
     </el-tabs>
+    <!--意向度-->
+    <el-dialog title="设置用户意向度"
+               :visible.sync="showYiModal"
+               :close-on-click-modal="false"
+               width="17%">
+      <el-tag class="m-right">意向度</el-tag>
+      <el-select v-model="selectValue" placeholder="请选择"
+                 @change="selectOpt">
+        <el-option
+          v-for="item in selectOptions"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        />
+      </el-select>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import {getList} from "@/api/studio/studio";
+import {
+  getHistoryMessage,
+  getList,
+  getUserMessage,
+  setUserIntention
+} from "@/api/studio/studio";
 import {getStore} from "@/util/store";
 
 export default {
   data() {
     return {
-      activeName: 'one',
+      activeName: '',
+      showUserMessage: false,
+      showYiModal: false,
+      selectUserId: '',
+      userAccount: '',
       // ws
       messageId: "", //推送消息的id
       userId: "1", //当前该设备用户id(消息推送接收者)
@@ -112,6 +128,11 @@ export default {
       loading: true,
       page: {
         pageSize: 1000,
+        currentPage: 1,
+        total: 0
+      },
+      historyPage: {
+        pageSize: 100000,
         currentPage: 1,
         total: 0
       },
@@ -167,32 +188,7 @@ export default {
       data: [],
       selectionList: [],
       showModal: false,
-      useData: [
-        {
-          id: 1,
-          name: '张三',
-          phone: '138******000',
-          type: 0
-        },
-        {
-          id: 2,
-          name: '张三',
-          phone: '138******000',
-          type: 1
-        },
-        {
-          id: 3,
-          name: '张三',
-          phone: '138******000',
-          type: 0
-        },
-        {
-          id: 4,
-          name: '张三',
-          phone: '138******000',
-          type: 1
-        }
-      ],
+      useData: [],
       infoData: [],
       oldData: [],
       courseInfo: {},
@@ -200,31 +196,35 @@ export default {
       // 意向度设置
       selectOptions: [
         {
-          value: 'A',
+          value: 1,
           label: 'A'
         },
         {
-          value: 'B',
+          value: 2,
           label: 'B'
         },
         {
-          value: 'C',
+          value: 3,
           label: 'C'
         },
         {
-          value: 'D',
+          value: 4,
           label: 'D'
         }],
       selectValue: '',
       // 管理员聊天
       messageInfo: '',
-      wsuri: 'ws://msg.liuyucn.com/api/websocket/',
+      // wsuri: 'ws://8.129.64.22:2829/webSocket/chat',
+      wsuri: 'ws://192.168.1.5:2829/webSocket/chat',
       code: '',
       userName: '',
+      adminPhone: ''
     };
   },
   created() {
     this.onLoad(this.page)
+    this.userAccount = getStore({name: 'userInfo'}).account;
+    console.log(this.userAccount)
   },
   destroyed() {
     this.websock.close() //离开路由之后断开websocket连接
@@ -252,7 +252,7 @@ export default {
       this.websock.onclose = this.websocketclose;
     },
     websocketonopen(e) { //连接建立之后执行send方法发送数据
-      this.websocketonmessage()
+      // this.websocketonmessage()
       console.log(this.websock);
     },
     websocketonerror() {//连接建立失败重连
@@ -260,25 +260,35 @@ export default {
     },
     websocketonmessage(e) { //数据接收
       console.log(e);
-      const redata = JSON.parse(e.data);
-      this.infoData = [
-        ...this.infoData,
-        {
-          desc: redata.message,
-          time: new Date().toLocaleTimeString()
-        }
-      ]
+      if (e) {
+        const redata = JSON.parse(e.data);
+        this.infoData = [
+          ...this.infoData,
+          {
+            msg: redata.msg,
+            sendTime: redata.sendTime,
+            name: redata.username
+          }
+        ]
+      }
     },
     websocketsend() {//数据发送
-      const data = getStore({name: 'userInfo'})
-      const userName = data.account;
-      this.websock.send(JSON.stringify({
-        userName,
-        code: this.code,
-        message: this.messageInfo,
-        time: new Date().toLocaleTimeString()
-      }));
-      this.messageInfo = '';
+     if (this.messageInfo === '') {
+       this.$message.error('请输入内容')
+       return
+     } else {
+       this.websock.send(`simple:${this.messageInfo}`);
+       this.messageInfo = '';
+     }
+    },
+    websockSendMessage() {
+      if (this.messageInfo === '') {
+        this.$message.error('请输入内容')
+        return
+      } else {
+        this.websock.send(`complex:${this.messageInfo}`);
+        this.messageInfo = '';
+      }
     },
     websocketclose(e) {  //关闭
       localStorage.removeItem('info')
@@ -292,11 +302,34 @@ export default {
     handleClick(tab) {
       this.data.forEach(item => {
         if (item.code === tab.name) {
-          this.courseInfo = item;
-          this.code = item.code;
-          this.initWebSocket(this.wsuri + item.code);
+          console.log(item);
+          // 获取用户信息
+          getUserMessage(item.id)
+          .then(res => {
+           if (res.data.code === 200) {
+             this.courseInfo = item;
+             this.useData = res.data.data;
+             this.code = item.code;
+             this.showUserMessage = true;
+             this.initWebSocket(`${this.wsuri}/${item.id}/${this.userAccount}`);
+           }
+          }).catch(err => {
+            console.log(err);
+          })
+        // 获取历史聊天记录
+          getHistoryMessage({
+            current: this.historyPage.currentPage,
+            size: this.historyPage.pageSize,
+            studioId: item.id
+          }).then(res => {
+            if (res.data.code === 200) {
+              const data = res.data.data;
+              this.infoData = data.records;
+              console.log(this.infoData);
+            }
+          }).catch(err => console.log(err))
         }
-        this.infoData = [];
+        this.infoData = []
         this.websocketclose()
       })
     },
@@ -320,16 +353,30 @@ export default {
         const data = res.data.data;
         this.page.total = data.total;
         this.data = data.records;
-        this.activeName = this.data[0].code || '';
-        this.courseInfo = this.data[0];
-        this.code = this.data[0].code;
-        this.initWebSocket(this.wsuri + this.data[0].code);
         this.loading = false;
       });
     },
+    setYi(id) {
+      this.showYiModal = true;
+      this.selectUserId = id;
+    },
     // 设置意向度
     selectOpt(value) {
-      console.log(value);
+      let data = {
+        id: this.selectUserId,
+        intention: value
+      }
+      setUserIntention(data)
+        .then(res => {
+          if (res.data.code === 200) {
+            this.$message.success('设置成功')
+            this.showYiModal = false;
+          } else {
+            this.$message.warning(res.data.msg)
+          }
+        }).catch(err => {
+        console.log(err);
+      })
     },
     // 关闭窗口
     closeModal() {
@@ -346,6 +393,14 @@ export default {
   text-align: center;
   justify-content: space-between;
   margin: 20px 0;
+  cursor: pointer;
+}
+
+.item-info-1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
 }
 
 .user-item {

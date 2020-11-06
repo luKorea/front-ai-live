@@ -393,6 +393,7 @@ export default {
   text-align: center;
   justify-content: space-between;
   margin: 20px 0;
+  cursor: pointer;
 }
 
 .user-item {

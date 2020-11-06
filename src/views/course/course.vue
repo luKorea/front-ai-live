@@ -17,10 +17,14 @@
                @current-change="currentChange"
                @size-change="sizeChange"
                @refresh-change="refreshChange"
-               :upload-before="uploadBefore"
-               :upload-after="uploadAfter"
                @on-load="onLoad">
       <template slot="menuLeft">
+        <el-button type="primary"
+                   size="small"
+                   v-if="permission.course_add"
+                   icon="el-icon-document-add"
+                   @click="handleAddCourse">新增
+        </el-button>
         <el-button type="primary"
                    size="small"
                    v-if="permission.course_opt"
@@ -51,6 +55,47 @@
         </el-button>
       </template>
     </avue-crud>
+    <!--  新增课程  -->
+    <el-dialog title="新增课程"
+               :visible.sync="addCourse"
+               :close-on-click-modal="false"
+               width="50%">
+      <el-form label-width="80px" :model="addCourseInfo">
+        <el-form-item label="上级课程" required>
+          <el-tree
+            :data="treeData"
+            :props="treeOption"
+            :highlight-current="true"
+            @node-click="nodeClick" />
+        </el-form-item>
+        <el-form-item label="课程名称" required>
+          <el-input v-model="addCourseInfo.courseTitle"/>
+        </el-form-item>
+        <el-form-item label="视频上传">
+          <el-upload action="#" :on-change="changeData">
+            <el-button class="btn upload-btn">上传附件</el-button>
+          </el-upload>
+          <el-progress :percentage="progressPercent" v-show="showProcess" status="success" />
+        </el-form-item>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="课程状态" required>
+              <el-radio v-model="addCourseInfo.isLocking" :label="2">解锁
+              </el-radio>
+              <el-radio v-model="addCourseInfo.isLocking" :label="1">锁定
+              </el-radio>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="是否直播" required>
+              <el-radio v-model="addCourseInfo.isReal" :label="1">直播</el-radio>
+              <el-radio v-model="addCourseInfo.isReal" :label="2">录播</el-radio>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-button type="primary" @click="addCourseSubmit" :disabled="btnEdit">确 定</el-button>
+      </el-form>
+    </el-dialog>
     <!--  排课管理  -->
     <el-dialog title="排课管理"
                :visible.sync="showCourse"
@@ -163,16 +208,34 @@ import {
   lockCourse,
   speechcraftData,
   speechcraftEdit,
-  removeSpeechcraft
+  removeSpeechcraft, getTreeData
 } from "@/api/course/course";
 import {mapGetters} from "vuex";
-import NProgress from 'nprogress' // progress bar
-import 'nprogress/nprogress.css' // progress bar style
 import {formatSeconds} from "@/util/date";
+import PlvVideoUpload from '@polyv/vod-upload-js-sdk';
+import md5 from 'md5';
 
 export default {
   data() {
     return {
+      addCourse: false,
+      addCourseInfo: {
+        isReal: 2,
+      },
+      showProcess: false,
+      progressPercent: 0,
+      videoUpload: null,
+      btnEdit: true,
+      treeData: [],
+      treeOption: {
+        nodeKey: 'id',
+        props: {
+          labelText: '标题',
+          label: 'label',
+          value: 'value',
+          children: 'children'
+        }
+      },
       form: {},
       query: {},
       loading: true,
@@ -185,6 +248,7 @@ export default {
       option: {
         tip: false,
         border: true,
+        addBtn: false,
         viewBtn: true,
         selection: true,
         dialogClickModal: false,
@@ -248,7 +312,7 @@ export default {
             hide: true,
             dicData: [{
               label: '解锁',
-              value: 2
+              value: 0
             }, {
               label: '锁定',
               value: 1
@@ -298,7 +362,8 @@ export default {
           {
             label: '直播间ID',
             prop: 'studioIds',
-            display: false
+            display: false,
+            hide: true
           },
           {
             label: "直播时间",
@@ -367,6 +432,28 @@ export default {
       courseDuration: ''
     };
   },
+  created() {
+    this.videoUpload = new PlvVideoUpload({
+      events: {
+        Error: (err) => {  // 错误事件回调
+          this.$message.error(err)
+          // this.showProcess = false;
+        },
+        UploadComplete: (e) => {
+          console.log(e);
+        }  // 全部上传任务完成回调
+      }
+    });
+    let pTime = new Date().getTime(),
+      secretkey = '0Q9vOv8o8R',
+      writeToken = '35bb3fde-f366-4dda-b2cc-4d2d5d011acf';
+    this.videoUpload.updateUserData({
+      userid: 'e896da440d', // Polyv云点播账号的ID
+      ptime: pTime,
+      sign: md5(`${secretkey}${pTime}`),
+      hash: md5(`${pTime}${writeToken}`)
+    })
+  },
   computed: {
     ...mapGetters(["permission"]),
     permissionList() {
@@ -390,18 +477,68 @@ export default {
     }
   },
   methods: {
-    // 视频上传显示进度条
-    uploadBefore(file, done, loading) {
-      console.log(file)
-      done()
-      this.$NProgress.start()
-      this.$message.success('上传前的方法')
+    handleAddCourse() {
+      this.addCourse = true;
+      getTreeData()
+      .then(res => {
+        this.treeData = res.data.data;
+      }).catch(err => console.log(err))
     },
-    uploadAfter(res, done, loading) {
-      console.log(res)
-      done()
-      this.$NProgress.done();
-      this.$message.success('上传后的方法')
+    httpRequest() {
+
+    },
+    // 文件上传
+    changeData(file, fileList) {
+      console.log(file);
+      const _that  = this;
+      this.videoUpload.addFile(
+        file.raw, // file 为待上传的文件对象
+        {
+          FileStarted: function (uploadInfo) { // 文件开始上传回调
+            console.log(uploadInfo);
+            _that.showProcess = true;
+          },
+          FileProgress: function (uploadInfo) { // 文件上传过程返回上传进度信息回调
+            _that.progressPercent = Math.floor((uploadInfo.progress * 100).toFixed(2))
+          },
+          FileStopped: function (uploadInfo) { // 文件暂停上传回调
+            console.log("文件上传停止: " + uploadInfo.fileData.title);
+          },
+          FileSucceed: function (uploadInfo) { // 文件上传成功回调
+            console.log(uploadInfo);
+            _that.addCourseInfo.vid = uploadInfo.fileData.vid;
+            _that.addCourseInfo.videoTitle = uploadInfo.fileData.filename;
+            // _that.showProcess = false;
+            _that.btnEdit = false;
+          },
+          FileFailed: function (uploadInfo) { // 文件上传失败回调
+            console.log(uploadInfo);
+            _that.showProcess = false;
+          }
+        },
+        {
+          title: _that.addCourseInfo.courseTitle
+        }
+      );
+      this.videoUpload.startAll();
+    },
+    nodeClick(e) {
+      this.addCourseInfo.courseTypeId = e.id;
+    },
+    addCourseSubmit() {
+      console.log(this.addCourseInfo);
+      add({
+        ...this.addCourseInfo
+      }).then(() => {
+        this.onLoad(this.page);
+        this.$message({
+          type: "success",
+          message: "操作成功!"
+        });
+        this.addCourse = false;
+      }, error => {
+        window.console.log(error);
+      });
     },
     rowSave(row, done, loading) {
       let {courseTypeName, vid, courseTitle, isEnable, isReal} = row;
@@ -667,10 +804,12 @@ export default {
         this.$message.error('请输入话术内容')
         return;
       }
+      console.log(this.speechcraftInfo);
       const data = {
         time: this.speechcraftInfo.time,
         courseId: this.speechcraftInfo.id,
         verbalContent: this.speechcraftInfo.verbalContent,
+        // courseTypeId: this.speechcraftInfo.courseTypeId
       }
       speechcraftEdit(data)
         .then(res => {

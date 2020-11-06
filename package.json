@@ -11,6 +11,7 @@
     "test:e2e": "vue-cli-service test:e2e"
   },
   "dependencies": {
+    "@polyv/vod-upload-js-sdk": "^1.2.1",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
     "classlist-polyfill": "^1.2.0",
@@ -18,6 +19,7 @@
     "element-ui": "^2.11.1",
     "js-base64": "^2.5.1",
     "js-cookie": "^2.2.0",
+    "md5": "^2.3.0",
     "mockjs": "^1.0.1-beta3",
     "net": "^1.0.2",
     "node-gyp": "^5.0.6",

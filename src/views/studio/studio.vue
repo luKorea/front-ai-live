@@ -64,6 +64,7 @@
             node-key="key"
             :render-after-expand="false"
             @node-click="handleTree"
+            :highlight-current="true"
             style="font-weight: bold"
           />
           <div>
@@ -79,29 +80,29 @@
         <el-col span="12">
           <el-tabs v-model="activeName" @tab-click="handleClick">
             <!--TODO 生成个人直播间 -->
-            <el-tab-pane label="生成个人直播间" name="first">
-              <el-form v-model="signStudio">
-                <el-form-item label="手机号码" prop="phone">
-                  <el-input v-model="signStudio.phone" type="text"
-                            show-word-limit
-                            maxlength="11"/>
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="submitStudio(1)">保存
-                  </el-button>
-                </el-form-item>
-                <el-form-item label="上课地址">
-                  <el-input v-model="signUrl" type="textarea" disabled/>
-                </el-form-item>
-                <el-form-item>
-                  <el-button
-                    class="tag-read"
-                    :data-clipboard-text="signUrl"
-                    @click="copySign">复制地址
-                  </el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
+<!--            <el-tab-pane label="生成个人直播间" name="first">-->
+<!--              <el-form v-model="signStudio">-->
+<!--                <el-form-item label="手机号码" prop="phone">-->
+<!--                  <el-input v-model="signStudio.phone" type="text"-->
+<!--                            show-word-limit-->
+<!--                            maxlength="11"/>-->
+<!--                </el-form-item>-->
+<!--                <el-form-item>-->
+<!--                  <el-button type="primary" @click="submitStudio(1)">保存-->
+<!--                  </el-button>-->
+<!--                </el-form-item>-->
+<!--                <el-form-item label="上课地址">-->
+<!--                  <el-input v-model="signUrl" type="textarea" disabled/>-->
+<!--                </el-form-item>-->
+<!--                <el-form-item>-->
+<!--                  <el-button-->
+<!--                    class="tag-read"-->
+<!--                    :data-clipboard-text="signUrl"-->
+<!--                    @click="copySign">复制地址-->
+<!--                  </el-button>-->
+<!--                </el-form-item>-->
+<!--              </el-form>-->
+<!--            </el-tab-pane>-->
 
             <!--TODO 生成多人直播间 -->
             <el-tab-pane label="生成多人直播间" name="second">
@@ -223,11 +224,11 @@ export default {
               trigger: "blur"
             }]
           },
-          {
-            label: '直播间类型',
-            prop: 'studioTypeName',
-            display: false
-          },
+          // {
+          //   label: '直播间类型',
+          //   prop: 'studioTypeName',
+          //   display: false
+          // },
           {
             label: "课程名称",
             prop: "courseTitle",
@@ -286,7 +287,7 @@ export default {
         value: '',
         time: '',
       },
-      activeName: 'first',
+      activeName: 'second',
       signStudio: {
         phone: null,
         selectCourse: '',
@@ -549,7 +550,7 @@ export default {
     sendLink() {
       this.selectData.map((item) => {
         if (this.cascaderInfo[0] === item.value) {
-          sendStudioAddress(item.vid)
+          sendStudioAddress(item.channelId)
             .then(res => {
               if (res.data.code === 200) {
                 if (this.activeName === 'first') {

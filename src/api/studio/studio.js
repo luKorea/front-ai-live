@@ -12,6 +12,9 @@ export const getList = (current, size, params) => {
   })
 }
 
+
+
+
 export const getDetail = (id) => {
   return request({
     url: '/api/blade-studio/detail',
@@ -21,6 +24,38 @@ export const getDetail = (id) => {
     }
   })
 }
+
+// 获取用户信息
+export const getUserMessage = (studioId) => {
+  return request({
+    url: '/api/blade-studio/getAllMemberByStudioId',
+    method: 'get',
+    params: {
+      studioId
+    }
+  })
+}
+
+// 获取历史记录
+export const getHistoryMessage = (params) => {
+  return request({
+    url: '/api/blade-studio-history/list',
+    method: 'get',
+    params: {
+      ...params
+    }
+  })
+}
+
+// 设置意向度
+export const setUserIntention = (data) => {
+  return request({
+    url: '/api/blade-member/updateIntentionById',
+    method: 'post',
+    data: data
+  })
+}
+
 
 export const remove = (ids) => {
   return request({
