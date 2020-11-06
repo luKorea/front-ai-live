@@ -635,6 +635,7 @@ export default {
                       // this.moreStudio.phone = null;
                       this.moreUrl = this.moreStudio.url;
                       this.moreStudio.phone = null;
+                      this.cascaderInfo = [];
                       // this.showStudio = false;
                     }
                   })
