@@ -38,6 +38,7 @@
     <el-dialog title="开通直播"
                :visible.sync="showStudio"
                :close-on-click-modal="false"
+               @close="closeStudio"
                width="50%">
       <el-form label-width="80px" :model="studioSearch">
         <el-form-item label="筛选">
@@ -56,7 +57,7 @@
         </el-form-item>
       </el-form>
       <el-row :gutter="20">
-        <el-col span="10" offset="1">
+        <el-col :span="10" :offset="1">
           <el-tag style="margin-bottom: 10px">课程类别</el-tag>
           <el-tree
             :data="treeData"
@@ -77,7 +78,7 @@
             @change="sendLink"
           />
         </el-col>
-        <el-col span="12">
+        <el-col :span="12">
           <el-tabs v-model="activeName" @tab-click="handleClick">
             <!--TODO 生成个人直播间 -->
 <!--            <el-tab-pane label="生成个人直播间" name="first">-->
@@ -553,6 +554,8 @@ export default {
           sendStudioAddress(item.channelId)
             .then(res => {
               if (res.data.code === 200) {
+                // this.$refs.tree.setCheckedKeys([]);
+
                 if (this.activeName === 'first') {
                   this.signStudio.url = res.data.data.url;
                   this.signStudio.code = res.data.data.code;
@@ -607,7 +610,8 @@ export default {
                   })
               } else {
                 let {phone} = this.moreStudio;
-                if (phone === null) {
+                console.log(phone);
+                if (phone.length === 0) {
                   this.$message.error('请输入手机号码')
                   return
                 }
@@ -631,6 +635,7 @@ export default {
                   .then(res => {
                     if (res.data.code === 200) {
                       this.$message.success('开通成功')
+                      this.cascaderInfo = [];
                       this.onLoad(this.page);
                       // this.moreStudio.phone = null;
                       this.moreUrl = this.moreStudio.url;
@@ -648,6 +653,15 @@ export default {
       })
     },
     handleClick() {
+      this.cascaderInfo = [];
+      this.moreStudio.url = '';
+      this.moreStudio.phone = null;
+      this.moreUrl = '';
+      this.signStudio.url = '';
+      this.signStudio.phone = null;
+      this.signUrl = '';
+    },
+    closeStudio() {
       this.cascaderInfo = [];
       this.moreStudio.url = '';
       this.moreStudio.phone = null;
