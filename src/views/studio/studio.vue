@@ -571,12 +571,14 @@ export default {
       })
     },
     submitStudio(type) {
+      
       console.log(this.cascaderInfo);
       this.selectData.map((item) => {
         if (this.cascaderInfo[0] === item.value) {
           item.children.map(i => {
             if (i.value === this.cascaderInfo[1]) {
               if (type === 1) {
+                
                 let {phone} = this.signStudio;
                 let newPhone = [phone];
                 let newsPhone = newPhone.map(item => {
@@ -610,12 +612,33 @@ export default {
                   })
               } else {
                 let {phone} = this.moreStudio;
-                console.log(phone);
                 if (phone.length === 0) {
                   this.$message.error('请输入手机号码')
                   return
                 }
-                let newPhone = phone.split(/[\s\n]/);
+                let newPhone = Array()
+                let chuli = phone.replace(/\s*/g,"")
+                let yu = chuli.length % 11;
+                if(yu > 0){
+                  this.$message.error('请输入正确的手机号码')
+                  return false
+                }
+
+                let num = 0
+                for (let i = 11; i <= chuli.length; i=i+11) {
+                  newPhone.push(chuli.slice(num,i))
+                  num = num + 11
+                }
+
+                
+                // let jiequ = chuli.slice(0,11)
+                
+                
+                // let newPhone = phone.split(/[\s\n]/);
+                // let newPhone = phone.replace(/\s*/g,"").split(0,11);
+                
+
+                
                 let newsPhone = newPhone.map(item => {
                   return {
                     phone: item
@@ -717,7 +740,22 @@ export default {
         this.$message.error('请输入手机号码')
         return
       }
-      let newPhone = phone.split(/[\s\n]/);
+
+      let newPhone = Array()
+      let chuli = phone.replace(/\s*/g,"")
+      let yu = chuli.length % 11;
+      if(yu > 0){
+        this.$message.error('请输入正确的手机号码')
+        return false
+      }
+
+      let num = 0
+      for (let i = 11; i <= chuli.length; i=i+11) {
+        newPhone.push(chuli.slice(num,i))
+        num = num + 11
+      }
+
+      // let newPhone = phone.split(/[\s\n]/);
       let newsPhone = newPhone.map(item => {
         return {
           phone: item,

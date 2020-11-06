@@ -251,6 +251,7 @@ export default {
         addBtn: false,
         viewBtn: true,
         selection: true,
+        editBtn:false,
         dialogClickModal: false,
         dialogHeight: 500,
         align: 'center',
@@ -292,6 +293,7 @@ export default {
             menu: false,
             drag: true,
             hide: true,
+
             rules: [{
               required: true,
               message: "请上传课程视频",

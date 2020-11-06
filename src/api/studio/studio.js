@@ -12,7 +12,17 @@ export const getList = (current, size, params) => {
   })
 }
 
-
+export const getListPage = (current, size, params) => {
+  return request({
+    url: '/api/blade-studio/getUserMonitoringList',
+    method: 'get',
+    params: {
+      ...params,
+      current,
+      size,
+    }
+  })
+}
 
 
 export const getDetail = (id) => {
@@ -26,12 +36,12 @@ export const getDetail = (id) => {
 }
 
 // 获取用户信息
-export const getUserMessage = (studioId) => {
+export const getUserMessage = (studioIds) => {
   return request({
     url: '/api/blade-studio/getAllMemberByStudioId',
     method: 'get',
     params: {
-      studioId
+      studioIds
     }
   })
 }

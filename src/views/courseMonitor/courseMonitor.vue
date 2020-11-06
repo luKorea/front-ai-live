@@ -6,30 +6,28 @@
       type='border-card'
       class="tab"
       @tab-click="handleClick">
-      <el-tab-pane v-for="item in data" :key="item.id" :label="`${item.courseTitle} ${item.daytime}`"
-                   :name="item.code">
+      <el-tab-pane v-for="item in data" :key="item.id" :label="`${item.course_title} ${item.daytime}`"
+                   :name="item.studioIds">
         <el-row :gutter="20" v-show='showUserMessage'>
           <!--预约课程同学列表-->
           <el-col :span="6">
-            <el-card class="box-card user-item" shadow="never"
-                     style="height: 100%">
-              <div slot="header" class="clearfix" style="text-align: center">
-                <span>预约课程同学列表</span>
-              </div>
-              <div v-for="item in useData" :key="item.id"
-                   class="text item item-info" @click="setYi(item.id)">
-                <el-tooltip class="item" effect="dark" content="点击设置用户意向度" placement="right-start">
-                  <el-button style="width: 100%">
-                    <div class="item-info-1">
-                      <span>{{ item.name }}</span>
-                      <span>{{ item.phone }}</span>
-<!--                      <el-tag type="danger" size="mini">在线-->
-<!--                      </el-tag>-->
-<!--                      <el-tag type="primary" size="mini" v-if="item.type === 1">离线-->
-<!--                      </el-tag>-->
-                    </div>
-                  </el-button>
-                </el-tooltip>
+            <div style="text-align: center">预约课程同学列表</div>
+            <el-card style="margin-top: 10px">
+              <div v-for="item in useData" :key="item.id" style="border: 1px solid #EBEEF5; padding: 0 10px; margin-bottom: 10px">
+                <div v-for="(i, r) in item.userList" :key="r" class="text item item-info" @click="setYi(i.id)">
+                  <el-tooltip class="item" effect="dark" content="点击设置用户意向度" placement="right-start">
+                    <el-button style="width: 100%">
+                      <div class="item-info-1">
+                        <span>{{ i.name }}</span>
+                        <span>{{ i.phone }}</span>
+                        <!--                      <el-tag type="danger" size="mini">在线-->
+                        <!--                      </el-tag>-->
+                        <!--                      <el-tag type="primary" size="mini" v-if="item.type === 1">离线-->
+                        <!--                      </el-tag>-->
+                      </div>
+                    </el-button>
+                  </el-tooltip>
+                </div>
               </div>
             </el-card>
           </el-col>
@@ -44,9 +42,9 @@
                     courseInfo.courseTitle
                   }}</span>
                   <span>{{ courseInfo.daytime }}</span>
-<!--                  <span style="float: right">类型: {{-->
-<!--                      courseInfo.studioTypeName-->
-<!--                    }}</span>-->
+                  <!--                  <span style="float: right">类型: {{-->
+                  <!--                      courseInfo.studioTypeName-->
+                  <!--                    }}</span>-->
                 </div>
                 <div style="height: 500px; overflow: auto" ref="msg-box">
                   <div v-for="info in infoData" :key='info.id'
@@ -105,7 +103,7 @@
 <script>
 import {
   getHistoryMessage,
-  getList,
+  getListPage,
   getUserMessage,
   setUserIntention
 } from "@/api/studio/studio";
@@ -273,13 +271,13 @@ export default {
       }
     },
     websocketsend() {//数据发送
-     if (this.messageInfo === '') {
-       this.$message.error('请输入内容')
-       return
-     } else {
-       this.websock.send(`simple:${this.messageInfo}`);
-       this.messageInfo = '';
-     }
+      if (this.messageInfo === '') {
+        this.$message.error('请输入内容')
+        return
+      } else {
+        this.websock.send(`simple:${this.messageInfo}`);
+        this.messageInfo = '';
+      }
     },
     websockSendMessage() {
       if (this.messageInfo === '') {
@@ -301,22 +299,22 @@ export default {
     },
     handleClick(tab) {
       this.data.forEach(item => {
-        if (item.code === tab.name) {
+        if (item.studioIds === tab.name) {
           console.log(item);
           // 获取用户信息
-          getUserMessage(item.id)
-          .then(res => {
-           if (res.data.code === 200) {
-             this.courseInfo = item;
-             this.useData = res.data.data;
-             this.code = item.code;
-             this.showUserMessage = true;
-             this.initWebSocket(`${this.wsuri}/${item.id}/${this.userAccount}`);
-           }
-          }).catch(err => {
+          getUserMessage(item.studioIds)
+            .then(res => {
+              if (res.data.code === 200) {
+                this.courseInfo = item;
+                this.useData = res.data.data;
+                this.code = item.code;
+                this.showUserMessage = true;
+                this.initWebSocket(`${this.wsuri}/${item.id}/${this.userAccount}`);
+              }
+            }).catch(err => {
             console.log(err);
           })
-        // 获取历史聊天记录
+          // 获取历史聊天记录
           getHistoryMessage({
             current: this.historyPage.currentPage,
             size: this.historyPage.pageSize,
@@ -349,10 +347,10 @@ export default {
     },
     onLoad(page, params = {}) {
       this.loading = true;
-      getList(page.currentPage, page.pageSize, Object.assign(params, this.query)).then(res => {
+      getListPage(page.currentPage, page.pageSize, Object.assign(params, this.query)).then(res => {
         const data = res.data.data;
         this.page.total = data.total;
-        this.data = data.records;
+        this.data = data;
         this.loading = false;
       });
     },
@@ -418,6 +416,7 @@ export default {
 
 .el-card__body {
   height: 100% !important;
+  border: 1px solid !important;
 }
 
 .tab {

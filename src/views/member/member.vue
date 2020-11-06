@@ -25,6 +25,7 @@
 <script>
   import {getList, getDetail, add, update, remove} from "@/api/member/member";
   import {mapGetters} from "vuex";
+  import {dateFormat} from "@/util/date";
 
   export default {
     data() {
@@ -93,8 +94,9 @@
               prop: "startTime",
               search: true,
               type: 'datetime',
-              format: "yyyy-MM-dd hh:mm",
-              valueFormat: "yyyy-MM-dd hh:mm",
+              valueFormat: "timestamp",
+              // format: "yyyy-MM-dd hh:mm",
+              // valueFormat: "yyyy-MM-dd hh:mm",
               display: false,
               hide: true,
             },
@@ -103,8 +105,9 @@
               prop: "endTime",
               search: true,
               type: 'datetime',
-              format: "yyyy-MM-dd hh:mm",
-              valueFormat: "yyyy-MM-dd hh:mm",
+              valueFormat: "timestamp",
+              // format: "yyyy-MM-dd hh:mm",
+              // valueFormat: "yyyy-MM-dd hh:mm",
               display: false,
               hide: true
             },
@@ -232,6 +235,8 @@
         this.onLoad(this.page);
       },
       searchChange(params, done) {
+        params.startTime = dateFormat(new Date(params.startTime));
+        params.endTime = dateFormat(new Date(params.endTime));
         this.query = params;
         this.page.currentPage = 1;
         this.onLoad(this.page, params);
