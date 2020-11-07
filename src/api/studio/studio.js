@@ -94,10 +94,13 @@ export const update = (row) => {
 }
 
 
-export const getTree = () => {
+export const getTree = (data) => {
   return request({
     url: '/api/blade-courseType/tree',
-    method: 'get'
+    method: 'get',
+    params: {
+      ...data
+    }
   })
 }
 

@@ -1,4 +1,6 @@
 import request from '@/router/axios';
+import axios from 'axios';
+import qs from 'qs';
 
 export const getList = (current, size, params) => {
     return request({
@@ -131,4 +133,18 @@ export const getTreeData = () => {
         url: '/api/blade-courseType/tree',
         method: 'get'
     })
+}
+
+// 上传Excel
+export const sendExcel = (data) => {
+  return request({
+    url: '/api/blade-words/import',
+    method: 'post',
+    data: data,
+    config:{
+      headers: {
+        contentType:'multipart/form-data'
+      }
+    }
+  })
 }

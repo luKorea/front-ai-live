@@ -42,15 +42,15 @@
                width="50%">
       <el-form label-width="80px" :model="studioSearch">
         <el-form-item label="筛选">
-          <el-input v-model="studioSearch.value" class="m-right"
+          <el-input v-model="studioSearch.value" class="m-right" clearable
                     style="width: 250px"/>
-          <el-date-picker
-            class="m-right"
-            v-model="studioSearch.time"
-            type="date"
-            format="yyyy 年 MM 月 dd 日"
-            value-format="yyyy-MM-dd"
-            placeholder="选择日期"/>
+<!--          <el-date-picker-->
+<!--            class="m-right"-->
+<!--            v-model="studioSearch.time"-->
+<!--            type="date"-->
+<!--            format="yyyy 年 MM 月 dd 日"-->
+<!--            value-format="yyyy-MM-dd"-->
+<!--            placeholder="选择日期"/>-->
           <el-button type="primary" @click="searchStudio" icon="el-icon-search">
             查询
           </el-button>
@@ -113,6 +113,7 @@
                             type="textarea"
                             :rows="6"
                             :cols="4"
+                            placeholder="请输入11位数的数字手机号码"
                   />
                 </el-form-item>
                 <el-form-item>
@@ -152,6 +153,7 @@
                 type="textarea"
                 :rows="6"
                 :cols="4"
+                placeholder="请输入11位数的数字手机号码"
               />
             </el-col>
             <el-button type="primary" @click="submitStudent">确 定</el-button>
@@ -361,11 +363,11 @@ export default {
     }
   },
   mounted() {
-    this.getTreeData()
+    this.getTreeData({})
   },
   methods: {
-    getTreeData() {
-      getTree()
+    getTreeData(data) {
+      getTree(data)
         .then(res => {
           if (res.data.code === 200) {
             this.treeData = res.data.data;
@@ -533,7 +535,9 @@ export default {
       })
     },
     searchStudio() {
-      console.log(this.studioSearch);
+      this.getTreeData({
+        courseTypeName: this.studioSearch.value
+      });
     },
     handleTree(data) {
       this.dynamicTags.forEach(item => {
@@ -571,14 +575,17 @@ export default {
       })
     },
     submitStudio(type) {
-      
+      if (this.cascaderInfo.length === 0) {
+        this.$message.error('请选择课程直播时间')
+        return
+      }
       console.log(this.cascaderInfo);
       this.selectData.map((item) => {
         if (this.cascaderInfo[0] === item.value) {
           item.children.map(i => {
             if (i.value === this.cascaderInfo[1]) {
               if (type === 1) {
-                
+
                 let {phone} = this.signStudio;
                 let newPhone = [phone];
                 let newsPhone = newPhone.map(item => {
@@ -630,15 +637,6 @@ export default {
                   num = num + 11
                 }
 
-                
-                // let jiequ = chuli.slice(0,11)
-                
-                
-                // let newPhone = phone.split(/[\s\n]/);
-                // let newPhone = phone.replace(/\s*/g,"").split(0,11);
-                
-
-                
                 let newsPhone = newPhone.map(item => {
                   return {
                     phone: item
@@ -663,7 +661,6 @@ export default {
                       // this.moreStudio.phone = null;
                       this.moreUrl = this.moreStudio.url;
                       this.moreStudio.phone = null;
-                      this.cascaderInfo = [];
                       // this.showStudio = false;
                     }
                   })
@@ -684,6 +681,7 @@ export default {
       this.signStudio.url = '';
       this.signStudio.phone = null;
       this.signUrl = '';
+      this.studioSearch.value = '';
     },
     closeStudio() {
       this.cascaderInfo = [];
@@ -693,6 +691,7 @@ export default {
       this.signStudio.url = '';
       this.signStudio.phone = null;
       this.signUrl = '';
+      this.studioSearch.value = '';
     },
     // 追加学员操作
     onLoadStudent(page, params = {}) {

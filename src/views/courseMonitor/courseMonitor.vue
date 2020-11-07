@@ -6,22 +6,28 @@
       type='border-card'
       class="tab"
       @tab-click="handleClick">
-      <el-tab-pane v-for="item in data" :key="item.id" :label="`${item.course_title} ${item.daytime}`"
+      <el-tab-pane v-for="item in data" :key="item.id"
+                   :label="`${item.course_title} ${item.daytime}`"
                    :name="item.studioIds">
         <el-row :gutter="20" v-show='showUserMessage'>
           <!--预约课程同学列表-->
           <el-col :span="6">
             <div style="text-align: center">预约课程同学列表</div>
             <el-card style="margin-top: 10px">
-              <div v-for="item in useData" :key="item.id" style="border: 1px solid #EBEEF5; padding: 0 10px; margin-bottom: 10px">
-                <div v-for="(i, r) in item.userList" :key="r" class="text item item-info" @click="setYi(i.id)">
-                  <el-tooltip class="item" effect="dark" content="点击设置用户意向度" placement="right-start">
+              <div v-for="item in useData" :key="item.id"
+                   style="border: 1px solid #c4c6ca; padding: 0 10px; margin-bottom: 10px">
+                <el-link :underline="false" @click="checkTim(item.studioId)">
+                  进入聊天室<i class="el-icon-view el-icon--right"></i></el-link>
+                <div v-for="(i, r) in item.userList" :key="r"
+                     class="text item item-info" @click="setYi(i.id)">
+                  <el-tooltip class="item" effect="dark" content="点击设置用户意向度"
+                              placement="right-start">
                     <el-button style="width: 100%">
                       <div class="item-info-1">
                         <span>{{ i.name }}</span>
                         <span>{{ i.phone }}</span>
-                        <!--                      <el-tag type="danger" size="mini">在线-->
-                        <!--                      </el-tag>-->
+                        <el-tag type="danger" size="mini">在线
+                        </el-tag>
                         <!--                      <el-tag type="primary" size="mini" v-if="item.type === 1">离线-->
                         <!--                      </el-tag>-->
                       </div>
@@ -32,21 +38,19 @@
             </el-card>
           </el-col>
           <!--聊天记录-->
-          <el-col :span="18">
+          <el-col :span="18" v-show="showTim">
             <el-col>
               <el-card class="box-card message-info" shadow="never"
                        style="height: 100%;overflow: auto">
                 <div slot="header" class="clearfix">
-                <span
-                  style="font-size: 16px; font-weight: bold; margin-right: 20px">{{
-                    courseInfo.courseTitle
-                  }}</span>
-                  <span>{{ courseInfo.daytime }}</span>
-                  <!--                  <span style="float: right">类型: {{-->
-                  <!--                      courseInfo.studioTypeName-->
-                  <!--                    }}</span>-->
+                  <span>聊天室</span>
+                  <!--                <span-->
+                  <!--                  style="font-size: 16px; font-weight: bold; margin-right: 20px">{{-->
+                  <!--                    courseInfo.course_title-->
+                  <!--                  }}</span>-->
+                  <!--                  <span>{{ courseInfo.daytime }}</span>-->
                 </div>
-                <div style="height: 500px; overflow: auto" ref="msg-box">
+                <div style="height: 500px; overflow: auto" ref="msgBox" id="chatRecord">
                   <div v-for="info in infoData" :key='info.id'
                        class="text item item-info">
                     <span>{{ info.name }}</span>
@@ -69,7 +73,8 @@
                     />
                   </el-col>
                   <el-col :span="4">
-                    <el-button type="primary" style="margin-bottom: 35px" @click="websockSendMessage">强制提醒发送
+                    <el-button type="primary" style="margin-bottom: 35px"
+                               @click="websockSendMessage">强制提醒发送
                     </el-button>
                     <el-button type="primary" @click="websocketsend">普通发送
                     </el-button>
@@ -108,6 +113,7 @@ import {
   setUserIntention
 } from "@/api/studio/studio";
 import {getStore} from "@/util/store";
+import {deleteObject} from "@/util/util";
 
 export default {
   data() {
@@ -115,6 +121,7 @@ export default {
       activeName: '',
       showUserMessage: false,
       showYiModal: false,
+      showTim: false,
       selectUserId: '',
       userAccount: '',
       // ws
@@ -236,14 +243,15 @@ export default {
       return ids.join(",");
     }
   },
-  updated() {
-    this.scrollBottom();
+  updated(){
+    // 聊天定位到底部
+    let ele = document.getElementById('chatRecord');
+    ele.scrollTop = ele.scrollHeight;
   },
   methods: {
     //初始化weosocket
     initWebSocket(wsuri) { //初始化weosocket
       this.websock = new WebSocket(wsuri);
-      console.log(this.websock);
       this.websock.onmessage = this.websocketonmessage;
       this.websock.onopen = this.websocketonopen;
       this.websock.onerror = this.websocketonerror;
@@ -251,31 +259,28 @@ export default {
     },
     websocketonopen(e) { //连接建立之后执行send方法发送数据
       // this.websocketonmessage()
-      console.log(this.websock);
     },
     websocketonerror() {//连接建立失败重连
-      this.initWebSocket();
+      // this.initWebSocket();
     },
     websocketonmessage(e) { //数据接收
-      console.log(e);
-      if (e) {
-        const redata = JSON.parse(e.data);
-        this.infoData = [
-          ...this.infoData,
-          {
-            msg: redata.msg,
-            sendTime: redata.sendTime,
-            name: redata.username
-          }
-        ]
-      }
+      const redata = JSON.parse(e.data);
+      let data = [
+        ...this.infoData,
+        {
+          msg: redata.msg,
+          sendTime: redata.sendTime,
+          name: redata.username
+        }
+      ];
+      this.infoData = deleteObject(data);
     },
     websocketsend() {//数据发送
       if (this.messageInfo === '') {
         this.$message.error('请输入内容')
         return
       } else {
-        this.websock.send(`simple:${this.messageInfo}`);
+        this.websock.send(`simple:${this.messageInfo}`)
         this.messageInfo = '';
       }
     },
@@ -284,23 +289,42 @@ export default {
         this.$message.error('请输入内容')
         return
       } else {
-        this.websock.send(`complex:${this.messageInfo}`);
+        this.websock.send(`complex:${this.messageInfo}`)
         this.messageInfo = '';
       }
     },
     websocketclose(e) {  //关闭
+      console.log(e);
       localStorage.removeItem('info')
-      console.log('断开连接', e);
     },
-    //滚动条到底部
-    scrollBottom() {
-      let el = this.$refs["msg-box"];
-      el.scrollTop = el.scrollHeight;
+    checkTim(id) {
+      this.initWebSocket(`${this.wsuri}/${id}/${this.userAccount}`)
+      this.showTim = true;
+      const loading = this.$loading({
+        lock: true,
+        text: 'Loading',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      });
+      // 获取历史聊天记录
+      getHistoryMessage({
+        current: this.historyPage.currentPage,
+        size: this.historyPage.pageSize,
+        studioId: id
+      }).then(res => {
+        if (res.data.code === 200) {
+          loading.close();
+          const data = res.data.data;
+          this.infoData = data.records;
+          console.log(this.infoData);
+        }
+      }).catch(err => console.log(err))
+      console.log(id);
     },
     handleClick(tab) {
       this.data.forEach(item => {
         if (item.studioIds === tab.name) {
-          console.log(item);
+          this.showTim = false;
           // 获取用户信息
           getUserMessage(item.studioIds)
             .then(res => {
@@ -309,23 +333,10 @@ export default {
                 this.useData = res.data.data;
                 this.code = item.code;
                 this.showUserMessage = true;
-                this.initWebSocket(`${this.wsuri}/${item.id}/${this.userAccount}`);
               }
             }).catch(err => {
             console.log(err);
           })
-          // 获取历史聊天记录
-          getHistoryMessage({
-            current: this.historyPage.currentPage,
-            size: this.historyPage.pageSize,
-            studioId: item.id
-          }).then(res => {
-            if (res.data.code === 200) {
-              const data = res.data.data;
-              this.infoData = data.records;
-              console.log(this.infoData);
-            }
-          }).catch(err => console.log(err))
         }
         this.infoData = []
         this.websocketclose()

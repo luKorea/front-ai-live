@@ -83,7 +83,8 @@
 
             {
               label: "上课时长",
-              prop: "time"
+              prop: "timeMax",
+              type: 'time'
             },
              {
               label: "销售姓名",

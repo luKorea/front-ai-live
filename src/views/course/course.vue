@@ -66,7 +66,7 @@
             :data="treeData"
             :props="treeOption"
             :highlight-current="true"
-            @node-click="nodeClick" />
+            @node-click="nodeClick"/>
         </el-form-item>
         <el-form-item label="课程名称" required>
           <el-input v-model="addCourseInfo.courseTitle"/>
@@ -75,12 +75,13 @@
           <el-upload action="#" :on-change="changeData">
             <el-button class="btn upload-btn">上传附件</el-button>
           </el-upload>
-          <el-progress :percentage="progressPercent" v-show="showProcess" status="success" />
+          <el-progress :percentage="progressPercent" v-show="showProcess"
+                       status="success"/>
         </el-form-item>
         <el-row>
           <el-col :span="12">
             <el-form-item label="课程状态" required>
-              <el-radio v-model="addCourseInfo.isLocking" :label="2">解锁
+              <el-radio v-model="addCourseInfo.isLocking" :label="0">解锁
               </el-radio>
               <el-radio v-model="addCourseInfo.isLocking" :label="1">锁定
               </el-radio>
@@ -93,7 +94,9 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-button type="primary" @click="addCourseSubmit" :disabled="btnEdit">确 定</el-button>
+        <el-button type="primary" @click="addCourseSubmit" :disabled="btnEdit">确
+          定
+        </el-button>
       </el-form>
     </el-dialog>
     <!--  排课管理  -->
@@ -186,9 +189,21 @@
                  style="height: 300px; overflow: auto"
       >
         <template slot="menuLeft">
+          <el-upload
+            style="display: inline-block"
+            name="filename"
+            :on-error="uploadFalse"
+            :on-success="uploadSuccess"
+            :on-change="uploadExcel"
+            :limit="1"
+            :show-file-list="false"
+            >
+            <el-button  size="small" style="margin-left: 10px;" icon="el-icon-edit" type="primary">导入</el-button>
+          </el-upload>
           <el-button type="primary" size="small" icon="el-icon-upload2"
-                     @click="submitSpeechcraft">导入
+                     @click="downFile">下载模板
           </el-button>
+          <!--          <upload-excel></upload-excel>-->
         </template>
       </avue-crud>
     </el-dialog>
@@ -208,14 +223,19 @@ import {
   lockCourse,
   speechcraftData,
   speechcraftEdit,
-  removeSpeechcraft, getTreeData
+  removeSpeechcraft, getTreeData, sendExcel
 } from "@/api/course/course";
 import {mapGetters} from "vuex";
 import {formatSeconds} from "@/util/date";
 import PlvVideoUpload from '@polyv/vod-upload-js-sdk';
 import md5 from 'md5';
+import {downloadFile} from "@/util/util";
+// import UploadExcel from './uploadExcel';
 
 export default {
+  // components() {
+  //   UploadExcel
+  // },
   data() {
     return {
       addCourse: false,
@@ -251,7 +271,7 @@ export default {
         addBtn: false,
         viewBtn: true,
         selection: true,
-        editBtn:false,
+        editBtn: false,
         dialogClickModal: false,
         dialogHeight: 500,
         align: 'center',
@@ -272,7 +292,8 @@ export default {
               message: "请输入课程类别",
               trigger: "blur"
             }],
-            span: 24
+            span: 24,
+            tip: '如果只有一级，请选择一级类别，如果一级下有对应的二级课程，选择对应的一级课程新增课程无效！'
           },
           {
             label: "课程名称",
@@ -479,12 +500,46 @@ export default {
     }
   },
   methods: {
+    downFile() {
+      downloadFile();
+    },
+    uploadSuccess(response, file, fileList) {
+      console.log(response)
+      if (response.code==200) {
+        this.$message({
+          message: response.message,
+          type: 'success'
+        });
+      } else {
+        this.$message({
+          message: response.message,
+          type: 'error'
+        });
+      }
+    },
+    uploadFalse(response, file, fileList) {
+      this.$message({
+        message: '文件上传失败！',
+        type: 'error'
+      });
+    },
+    //上传文件
+    uploadExcel(file, fileList){
+      sendExcel({
+        filename: file,
+        courseId: this.speechcraftInfo.courseTypeId
+      }).then(res => {
+        console.log(res);
+      }).catch(err => {
+        console.log(err);
+      })
+    },
     handleAddCourse() {
       this.addCourse = true;
       getTreeData()
-      .then(res => {
-        this.treeData = res.data.data;
-      }).catch(err => console.log(err))
+        .then(res => {
+          this.treeData = res.data.data;
+        }).catch(err => console.log(err))
     },
     httpRequest() {
 
@@ -492,7 +547,7 @@ export default {
     // 文件上传
     changeData(file, fileList) {
       console.log(file);
-      const _that  = this;
+      const _that = this;
       this.videoUpload.addFile(
         file.raw, // file 为待上传的文件对象
         {
