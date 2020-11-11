@@ -141,10 +141,6 @@ export const sendExcel = (data) => {
     url: '/api/blade-words/import',
     method: 'post',
     data: data,
-    config:{
-      headers: {
-        contentType:'multipart/form-data'
-      }
-    }
+    headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

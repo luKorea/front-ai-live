@@ -190,11 +190,16 @@
       >
         <template slot="menuLeft">
           <el-upload
+            class="filter-item"
             style="display: inline-block"
-            name="filename"
+            :action="'/api/blade-words/import'"
             :on-error="uploadFalse"
             :on-success="uploadSuccess"
-            :on-change="uploadExcel"
+            ref="upload"
+            :data='{
+              courseId: this.speechcraftInfo.id
+            }'
+            name="filename"
             :limit="1"
             :show-file-list="false"
             >
@@ -242,6 +247,7 @@ export default {
       addCourseInfo: {
         isReal: 2,
       },
+      courseTypeId: '',
       showProcess: false,
       progressPercent: 0,
       videoUpload: null,
@@ -504,17 +510,20 @@ export default {
       downloadFile();
     },
     uploadSuccess(response, file, fileList) {
-      console.log(response)
-      if (response.code==200) {
+      if (response.code===200) {
         this.$message({
-          message: response.message,
+          message: response.msg,
           type: 'success'
         });
+        this.$refs.upload.clearFiles(); //上传成功之后清除历史记录
+        this.onLoadSpeechcraft(this.speechcraftInfo.id);
       } else {
         this.$message({
-          message: response.message,
+          message: response.msg,
           type: 'error'
         });
+        this.$refs.upload.clearFiles(); //上传成功之后清除历史记录
+        this.onLoadSpeechcraft(this.speechcraftInfo.id);
       }
     },
     uploadFalse(response, file, fileList) {
@@ -525,8 +534,10 @@ export default {
     },
     //上传文件
     uploadExcel(file, fileList){
+      console.log(this.courseTypeId);
+      console.log(file);
       sendExcel({
-        filename: file,
+        file,
         courseId: this.speechcraftInfo.courseTypeId
       }).then(res => {
         console.log(res);
@@ -540,9 +551,6 @@ export default {
         .then(res => {
           this.treeData = res.data.data;
         }).catch(err => console.log(err))
-    },
-    httpRequest() {
-
     },
     // 文件上传
     changeData(file, fileList) {
@@ -852,6 +860,8 @@ export default {
       }
       this.showSpeechcraft = true;
       this.speechcraftInfo = this.selectionList[0] || {};
+      this.courseTypeId  = this.speechcraftInfo.courseTypeId;
+      console.log(this.speechcraftInfo);
       this.onLoadSpeechcraft(this.speechcraftInfo.id);
     },
     submitSpeechcraft() {

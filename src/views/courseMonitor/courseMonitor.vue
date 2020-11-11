@@ -247,6 +247,10 @@ export default {
     // 聊天定位到底部
     let ele = document.getElementById('chatRecord');
     ele.scrollTop = ele.scrollHeight;
+    // this.$nextTick(() =>{
+    //   ele.scrollTop = ele.scrollHeight;
+    //   console.log(ele.scrollTop);
+    // })
   },
   methods: {
     //初始化weosocket
