@@ -3,6 +3,7 @@ import axios from './router/axios';
 import VueAxios from 'vue-axios';
 import App from './App';
 import router from './router/router';
+import AvueUeditor from 'avue-plugin-ueditor'
 import './permission'; // 权限
 import './error'; // 日志
 import store from './store';
@@ -20,6 +21,7 @@ import basicContainer from './components/basic-container/main'
 
 Vue.use(router)
 Vue.use(VueAxios, axios)
+Vue.use(AvueUeditor);
 Vue.use(Element, {
     i18n: (key, value) => i18n.t(key, value)
 })

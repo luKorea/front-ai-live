@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@polyv/vod-upload-js-sdk": "^1.2.1",
+    "avue-plugin-ueditor": "^0.1.7",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
     "classlist-polyfill": "^1.2.0",

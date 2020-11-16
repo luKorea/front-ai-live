@@ -57,7 +57,8 @@
     </avue-crud>
     <!--  新增课程  -->
     <el-dialog title="新增课程"
-               :visible.sync="addCourse"
+               :visible="addCourse"
+               :before-close="handelBeforeClose"
                :close-on-click-modal="false"
                width="50%">
       <el-form label-width="80px" :model="addCourseInfo">
@@ -235,12 +236,8 @@ import {formatSeconds} from "@/util/date";
 import PlvVideoUpload from '@polyv/vod-upload-js-sdk';
 import md5 from 'md5';
 import {downloadFile} from "@/util/util";
-// import UploadExcel from './uploadExcel';
 
 export default {
-  // components() {
-  //   UploadExcel
-  // },
   data() {
     return {
       addCourse: false,
@@ -466,7 +463,7 @@ export default {
       events: {
         Error: (err) => {  // 错误事件回调
           this.$message.error(err)
-          // this.showProcess = false;
+          this.showProcess = false;
         },
         UploadComplete: (e) => {
           console.log(e);
@@ -506,6 +503,10 @@ export default {
     }
   },
   methods: {
+    handelBeforeClose() {
+      this.addCourse = false;
+      this.addCourseInfo = {};
+    },
     downFile() {
       downloadFile();
     },
@@ -606,6 +607,7 @@ export default {
       });
     },
     rowSave(row, done, loading) {
+      console.log(row);
       let {courseTypeName, vid, courseTitle, isEnable, isReal} = row;
       console.log(vid);
       let courseTypeId = courseTypeName,

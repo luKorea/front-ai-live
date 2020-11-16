@@ -279,6 +279,7 @@ export default {
           type: "success",
           message: "操作成功!"
         });
+        window.location.reload();
       }, error => {
         done();
         console.log(error);

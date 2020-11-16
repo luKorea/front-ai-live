@@ -14,9 +14,9 @@
           <el-col :span="6">
             <div style="text-align: center">预约课程同学列表</div>
             <el-card style="margin-top: 10px">
-              <div v-for="item in useData" :key="item.id"
+              <div v-for="(item, idx) in useData" :key="item.id"
                    style="border: 1px solid #c4c6ca; padding: 0 10px; margin-bottom: 10px">
-                <el-link :underline="false" @click="checkTim(item.studioId)">
+                <el-link :underline="setLine" @click="checkTim(item.studioId, idx)" :class="idx==index?'hover':''">
                   进入聊天室<i class="el-icon-view el-icon--right"></i></el-link>
                 <div v-for="(i, r) in item.userList" :key="r"
                      class="text item item-info" @click="setYi(i.id)">
@@ -44,11 +44,6 @@
                        style="height: 100%;overflow: auto">
                 <div slot="header" class="clearfix">
                   <span>聊天室</span>
-                  <!--                <span-->
-                  <!--                  style="font-size: 16px; font-weight: bold; margin-right: 20px">{{-->
-                  <!--                    courseInfo.course_title-->
-                  <!--                  }}</span>-->
-                  <!--                  <span>{{ courseInfo.daytime }}</span>-->
                 </div>
                 <div style="height: 500px; overflow: auto" ref="msgBox" id="chatRecord">
                   <div v-for="info in infoData" :key='info.id'
@@ -124,6 +119,8 @@ export default {
       showTim: false,
       selectUserId: '',
       userAccount: '',
+      setLine: false,
+      index: null,
       // ws
       messageId: "", //推送消息的id
       userId: "1", //当前该设备用户id(消息推送接收者)
@@ -293,6 +290,12 @@ export default {
         this.$message.error('请输入内容')
         return
       } else {
+        this.$notify({
+          title: '强提醒消息',
+          message: `您发送了一条强提醒消息，消息内容为: ${this.messageInfo}`,
+          duration: 2000,
+          type: 'success'
+        });
         this.websock.send(`complex:${this.messageInfo}`)
         this.messageInfo = '';
       }
@@ -301,7 +304,8 @@ export default {
       console.log(e);
       localStorage.removeItem('info')
     },
-    checkTim(id) {
+    checkTim(id, idx) {
+      this.index = idx;
       this.initWebSocket(`${this.wsuri}/${id}/${this.userAccount}`)
       this.showTim = true;
       const loading = this.$loading({
@@ -329,6 +333,7 @@ export default {
       this.data.forEach(item => {
         if (item.studioIds === tab.name) {
           this.showTim = false;
+          this.index = null;
           // 获取用户信息
           getUserMessage(item.studioIds)
             .then(res => {
@@ -436,5 +441,8 @@ export default {
 
 .tab {
   height: 100% !important;
+}
+.hover {
+  color: red;
 }
 </style>
