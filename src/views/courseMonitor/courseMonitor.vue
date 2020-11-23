@@ -26,10 +26,10 @@
                       <div class="item-info-1">
                         <span>{{ i.name }}</span>
                         <span>{{ i.phone }}</span>
-                        <el-tag type="danger" size="mini">在线
+                        <el-tag type="danger" size="mini" v-if="i.state == 1">在线
                         </el-tag>
-                        <!--                      <el-tag type="primary" size="mini" v-if="item.type === 1">离线-->
-                        <!--                      </el-tag>-->
+                        <el-tag type="primary" size="mini" v-if="i.state == 0">离线
+                        </el-tag>
                       </div>
                     </el-button>
                   </el-tooltip>
@@ -103,6 +103,7 @@
 <script>
 import {
   getHistoryMessage,
+  getChatroom,
   getListPage,
   getUserMessage,
   setUserIntention
@@ -113,6 +114,10 @@ import {deleteObject} from "@/util/util";
 export default {
   data() {
     return {
+
+      studioId:'',
+      //聊天室id
+
       activeName: '',
       showUserMessage: false,
       showYiModal: false,
@@ -217,7 +222,7 @@ export default {
       // 管理员聊天
       messageInfo: '',
       wsuri: 'ws://8.129.64.22:2829/webSocket/chat',
-      // wsuri: 'ws://192.168.1.5:2829/webSocket/chat',
+      // wsuri: 'ws://192.168.1.8:2829/webSocket/chat',
       code: '',
       userName: '',
       adminPhone: ''
@@ -266,15 +271,53 @@ export default {
     },
     websocketonmessage(e) { //数据接收
       const redata = JSON.parse(e.data);
-      let data = [
+      if(redata.msg == "offline"){
+          // 获取用户信息
+          getUserMessage(this.studioId)
+            .then(res => {
+              if (res.data.code === 200) {
+                console.log('asd')
+                
+                this.useData = res.data.data;
+                
+                this.showUserMessage = true;
+                this.$forceUpdate();
+              }
+            }).catch(err => {
+            console.log(err);
+          })
+         
+      }else if(redata.msg == "logged"){
+
+          // 获取用户信息
+          getUserMessage(this.studioId)
+            .then(res => {
+              if (res.data.code === 200) {
+                console.log('123')
+                
+                this.useData = res.data.data;
+                
+                this.showUserMessage = true;
+                this.$forceUpdate();
+
+              }
+            }).catch(err => {
+            console.log(err);
+          })
+
+      }else{
+        let data = [
         ...this.infoData,
-        {
-          msg: redata.msg,
-          sendTime: redata.sendTime,
-          name: redata.username
-        }
-      ];
-      this.infoData = deleteObject(data);
+          {
+            msg: redata.msg,
+            sendTime: redata.sendTime,
+            name: redata.username
+          }
+        ];
+        this.infoData = deleteObject(data);
+      }
+      
+      
     },
     websocketsend() {//数据发送
       if (this.messageInfo === '') {
@@ -305,6 +348,7 @@ export default {
       localStorage.removeItem('info')
     },
     checkTim(id, idx) {
+      this.studioId = id
       this.index = idx;
       this.initWebSocket(`${this.wsuri}/${id}/${this.userAccount}`)
       this.showTim = true;
@@ -334,6 +378,7 @@ export default {
         if (item.studioIds === tab.name) {
           this.showTim = false;
           this.index = null;
+          
           // 获取用户信息
           getUserMessage(item.studioIds)
             .then(res => {
@@ -417,8 +462,13 @@ export default {
 .item-info-1 {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   cursor: pointer;
+  flex-direction:column;
+  
+}
+.item-info-1 span{
+  margin-bottom:8px;
 }
 
 .user-item {

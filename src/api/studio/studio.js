@@ -57,6 +57,7 @@ export const getHistoryMessage = (params) => {
   })
 }
 
+
 // 设置意向度
 export const setUserIntention = (data) => {
   return request({
