@@ -432,7 +432,7 @@ export default {
       showCourse: false,
       courseInfo: {},
       courseOption: {
-        editBtn: false,
+        menu: false,
         align: 'center',
         column: [
           {
@@ -462,7 +462,7 @@ export default {
     this.videoUpload = new PlvVideoUpload({
       events: {
         Error: (err) => {  // 错误事件回调
-          this.$message.error(err)
+          this.$message.error(`保利威错误提示: ${err}`)
           this.showProcess = false;
         },
         UploadComplete: (e) => {
@@ -767,7 +767,7 @@ export default {
 
       this.courseDuration = formatSeconds(this.courseInfo.duration)
       console.log(this.courseInfo);
-      this.onLoadCourse(this.courseInfo.id);
+      this.onLoadCourse(this.courseInfo.channelId);
     },
     submitCourse() {
       console.log(this.courseInfo.day);
@@ -791,8 +791,10 @@ export default {
       courseEdit(data)
         .then(res => {
           if (res.data.code === 200) {
+            this.courseInfo.day = '';
+            this.courseInfo.startTime = '';
             this.$message.success('操作成功')
-            this.onLoadCourse(this.courseInfo.id)
+            this.onLoadCourse(this.courseInfo.channelId)
           }
         }).catch(err => {
         console.log(err);
@@ -809,7 +811,7 @@ export default {
         .then(() => {
           return removeCourse(row.id)
         }).then(() => {
-        this.onLoadCourse(this.courseInfo.id);
+        this.onLoadCourse(this.courseInfo.channelId);
         this.$message({
           type: "success",
           message: "操作成功!"

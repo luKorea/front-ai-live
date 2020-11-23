@@ -48,6 +48,7 @@
           align: 'center',
           // viewBtn: true,
           // selection: true,
+          excelBtn: true,
           dialogClickModal: false,
           menu: false,
           column: [

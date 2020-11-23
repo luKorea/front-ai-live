@@ -264,8 +264,7 @@ export default {
   },
   methods: {
     rowSave(row, loading, done) {
-      console.log(row.qrCode);
-      let qrCode = row.qrCode[0].value;
+      let qrCode = row.qrCode;
       row.deptId = row.deptId.join(",");
       row.roleId = row.roleId.join(",");
       const data = {
