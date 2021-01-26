@@ -7,7 +7,7 @@
       class="tab"
       @tab-click="handleClick">
       <el-tab-pane v-for="item in data" :key="item.id"
-                   :label="`${item.course_title} ${item.daytime}`"
+                   :label="`(${item.is_real}) ${item.course_title} ${item.daytime}`"
                    :name="item.studioIds">
         <el-row :gutter="20" v-show='showUserMessage'>
           <!--预约课程同学列表-->
@@ -16,7 +16,9 @@
             <el-card style="margin-top: 10px">
               <div v-for="(item, idx) in useData" :key="item.id"
                    style="border: 1px solid #c4c6ca; padding: 0 10px; margin-bottom: 10px">
-                <el-link :underline="setLine" @click="checkTim(item.studioId, idx)" :class="idx==index?'hover':''">
+                <el-link :underline="setLine"
+                         @click="checkTim(item.studioId, idx)"
+                         :class="idx==index?'hover':''">
                   进入聊天室<i class="el-icon-view el-icon--right"></i></el-link>
                 <div v-for="(i, r) in item.userList" :key="r"
                      class="text item item-info" @click="setYi(i.id)">
@@ -28,7 +30,8 @@
                         <span>{{ i.phone }}</span>
                         <el-tag type="danger" size="mini" v-if="i.state == 1">在线
                         </el-tag>
-                        <el-tag type="primary" size="mini" v-if="i.state == 0">离线
+                        <el-tag type="primary" size="mini" v-if="i.state == 0">
+                          离线
                         </el-tag>
                       </div>
                     </el-button>
@@ -45,11 +48,15 @@
                 <div slot="header" class="clearfix">
                   <span>聊天室</span>
                 </div>
-                <div style="height: 500px; overflow: auto" ref="msgBox" id="chatRecord">
+                <div style="height: 500px; overflow: auto" ref="msgBox"
+                     id="chatRecord">
                   <div v-for="info in infoData" :key='info.id'
                        class="text item item-info">
                     <span>{{ info.name }}</span>
-                    <span>{{ info.msg || info.content }}</span>
+                    <span v-if="info.type === 4">
+                      <img :src="info.img || info.content" alt="" style="width: 400px; height: 300px; object-fit: contain"/>
+                    </span>
+                    <span v-else>{{ info.msg || info.content }}</span>
                     <span style="margin-right: 20px">{{ info.sendTime }}</span>
                   </div>
                 </div>
@@ -68,11 +75,32 @@
                     />
                   </el-col>
                   <el-col :span="4">
-                    <el-button type="primary" style="margin-bottom: 35px"
+                    <el-button type="primary" style="margin-bottom: 10px"
                                @click="websockSendMessage">强制提醒发送
                     </el-button>
-                    <el-button type="primary" @click="websocketsend">普通发送
+                    <el-button type="primary" @click="websocketsend"
+                               style="margin-bottom: 10px">普通发送
                     </el-button>
+                    <el-upload
+                      class="filter-item"
+                      id='upload'
+                      style="display: inline-block"
+                      :action="'/api/blade-studio/put-file'"
+                      :on-error="uploadFalse"
+                      :on-success="uploadSuccess"
+                      ref="img"
+                      :data='{
+                        studioId: studioId,
+                        phone: adminPhone
+                      }'
+                      name="file"
+                      :limit="1"
+                      :show-file-list="false"
+                    >
+                      <el-button size="small" style="margin-left: 10px;"
+                                 type="primary">图片上传
+                      </el-button>
+                    </el-upload>
                   </el-col>
                 </el-row>
               </el-card>
@@ -103,7 +131,6 @@
 <script>
 import {
   getHistoryMessage,
-  getChatroom,
   getListPage,
   getUserMessage,
   setUserIntention
@@ -115,7 +142,8 @@ export default {
   data() {
     return {
 
-      studioId:'',
+      studioId: '',
+      studioIds: '',
       //聊天室id
 
       activeName: '',
@@ -222,7 +250,7 @@ export default {
       // 管理员聊天
       messageInfo: '',
       wsuri: 'ws://8.129.64.22:2829/webSocket/chat',
-      // wsuri: 'ws://192.168.1.8:2829/webSocket/chat',
+      // wsuri: 'ws://192.168.1.11:2829/webSocket/chat',
       code: '',
       userName: '',
       adminPhone: ''
@@ -231,7 +259,7 @@ export default {
   created() {
     this.onLoad(this.page)
     this.userAccount = getStore({name: 'userInfo'}).account;
-    console.log(this.userAccount)
+    this.adminPhone = getStore({name: 'userInfo'}).account;
   },
   destroyed() {
     this.websock.close() //离开路由之后断开websocket连接
@@ -245,16 +273,73 @@ export default {
       return ids.join(",");
     }
   },
-  updated(){
-    // 聊天定位到底部
-    let ele = document.getElementById('chatRecord');
-    ele.scrollTop = ele.scrollHeight;
-    // this.$nextTick(() =>{
-    //   ele.scrollTop = ele.scrollHeight;
-    //   console.log(ele.scrollTop);
-    // })
+  updated() {
+    if (this.data.websock !== null) {
+      // 聊天定位到底部
+      let ele = document.getElementById('chatRecord');
+      ele.scrollTop = ele.scrollHeight;
+    }
   },
   methods: {
+    uploadSuccess(response, file, fileList) {
+      if (response.code === 200) {
+        this.$message({
+          message: response.msg,
+          type: 'success'
+        });
+        this.showLoading()
+        // 获取历史聊天记录
+        getHistoryMessage({
+          current: this.historyPage.currentPage,
+          size: this.historyPage.pageSize,
+          studioId: this.studioId
+        }).then(res => {
+          if (res.data.code === 200) {
+            this.hideLoading()
+            const data = res.data.data;
+            this.infoData = data.records;
+            console.log(this.infoData);
+          }
+        }).catch(err => {
+          this.hideLoading()
+          console.log(err)
+        })
+        this.$refs['img'].forEach((item) => {
+          item.clearFiles();
+        })
+        // this.$refs['img'][0].clearFiles();
+      } else {
+        this.$message({
+          message: response.msg,
+          type: 'error'
+        });
+        this.$refs['img'].forEach((item) => {
+          item.clearFiles();
+        })
+      }
+    },
+    uploadFalse(response, file, fileList) {
+      this.$message({
+        message: '文件上传失败！',
+        type: 'error'
+      });
+    },
+    showLoading() {
+      this.$loading({
+        lock: true,
+        text: '数据请求中',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      });
+    },
+    hideLoading() {
+      this.$loading({
+        lock: true,
+        text: 'Loading',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      }).close();
+    },
     //初始化weosocket
     initWebSocket(wsuri) { //初始化weosocket
       this.websock = new WebSocket(wsuri);
@@ -271,53 +356,51 @@ export default {
     },
     websocketonmessage(e) { //数据接收
       const redata = JSON.parse(e.data);
-      if(redata.msg == "offline"){
-          // 获取用户信息
-          getUserMessage(this.studioId)
-            .then(res => {
-              if (res.data.code === 200) {
-                console.log('asd')
-                
-                this.useData = res.data.data;
-                
-                this.showUserMessage = true;
-                this.$forceUpdate();
-              }
-            }).catch(err => {
-            console.log(err);
-          })
-         
-      }else if(redata.msg == "logged"){
+      if (redata.msg == "offline") {
+        // 获取用户信息
+        getUserMessage(this.studioIds)
+          .then(res => {
+            if (res.data.code === 200) {
+              console.log('asd')
+              this.useData = res.data.data;
+              this.showUserMessage = true;
+              this.$forceUpdate();
+            }
+          }).catch(err => {
+          console.log(err);
+        })
+        this.infoData = [...this.infoData];
+      } else if (redata.msg == "logged") {
+        // 获取用户信息
+        getUserMessage(this.studioIds)
+          .then(res => {
+            if (res.data.code === 200) {
+              console.log('123')
+              this.useData = res.data.data;
+              this.showUserMessage = true;
+              this.$forceUpdate();
 
-          // 获取用户信息
-          getUserMessage(this.studioId)
-            .then(res => {
-              if (res.data.code === 200) {
-                console.log('123')
-                
-                this.useData = res.data.data;
-                
-                this.showUserMessage = true;
-                this.$forceUpdate();
-
-              }
-            }).catch(err => {
-            console.log(err);
-          })
-
-      }else{
+            }
+          }).catch(err => {
+          console.log(err);
+        })
+        this.infoData = [...this.infoData];
+      } else {
         let data = [
-        ...this.infoData,
+          ...this.infoData,
           {
             msg: redata.msg,
             sendTime: redata.sendTime,
-            name: redata.username
+            name: redata.username,
+            type: redata.type
           }
         ];
+        console.log(redata, data);
         this.infoData = deleteObject(data);
+        console.log(this.infoData);
       }
-      
-      
+
+
     },
     websocketsend() {//数据发送
       if (this.messageInfo === '') {
@@ -344,7 +427,6 @@ export default {
       }
     },
     websocketclose(e) {  //关闭
-      console.log(e);
       localStorage.removeItem('info')
     },
     checkTim(id, idx) {
@@ -352,12 +434,7 @@ export default {
       this.index = idx;
       this.initWebSocket(`${this.wsuri}/${id}/${this.userAccount}`)
       this.showTim = true;
-      const loading = this.$loading({
-        lock: true,
-        text: 'Loading',
-        spinner: 'el-icon-loading',
-        background: 'rgba(0, 0, 0, 0.7)'
-      });
+      this.showLoading()
       // 获取历史聊天记录
       getHistoryMessage({
         current: this.historyPage.currentPage,
@@ -365,30 +442,35 @@ export default {
         studioId: id
       }).then(res => {
         if (res.data.code === 200) {
-          loading.close();
+          this.hideLoading()
           const data = res.data.data;
           this.infoData = data.records;
           console.log(this.infoData);
         }
-      }).catch(err => console.log(err))
-      console.log(id);
+      }).catch(err => {
+        this.hideLoading()
+        console.log(err)
+      })
     },
     handleClick(tab) {
       this.data.forEach(item => {
         if (item.studioIds === tab.name) {
+          this.studioIds = item.studioIds;
           this.showTim = false;
           this.index = null;
-          
+          this.showLoading()
           // 获取用户信息
           getUserMessage(item.studioIds)
             .then(res => {
               if (res.data.code === 200) {
+                this.hideLoading();
                 this.courseInfo = item;
                 this.useData = res.data.data;
                 this.code = item.code;
                 this.showUserMessage = true;
               }
             }).catch(err => {
+            this.hideLoading();
             console.log(err);
           })
         }
@@ -429,15 +511,18 @@ export default {
         id: this.selectUserId,
         intention: value
       }
+      this.showLoading();
       setUserIntention(data)
         .then(res => {
           if (res.data.code === 200) {
+            this.hideLoading()
             this.$message.success('设置成功')
             this.showYiModal = false;
           } else {
             this.$message.warning(res.data.msg)
           }
         }).catch(err => {
+        this.hideLoading()
         console.log(err);
       })
     },
@@ -464,11 +549,12 @@ export default {
   align-items: center;
   justify-content: space-around;
   cursor: pointer;
-  flex-direction:column;
-  
+  flex-direction: column;
+
 }
-.item-info-1 span{
-  margin-bottom:8px;
+
+.item-info-1 span {
+  margin-bottom: 8px;
 }
 
 .user-item {
@@ -492,6 +578,7 @@ export default {
 .tab {
   height: 100% !important;
 }
+
 .hover {
   color: red;
 }

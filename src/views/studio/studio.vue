@@ -366,6 +366,22 @@ export default {
     this.getTreeData({})
   },
   methods: {
+    showLoading() {
+      this.$loading({
+        lock: true,
+        text: '数据请求中',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      });
+    },
+    hideLoading() {
+      this.$loading({
+        lock: true,
+        text: 'Loading',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      }).close();
+    },
     getTreeData(data) {
       getTree(data)
         .then(res => {
@@ -559,7 +575,6 @@ export default {
             .then(res => {
               if (res.data.code === 200) {
                 // this.$refs.tree.setCheckedKeys([]);
-
                 if (this.activeName === 'first') {
                   this.signStudio.url = res.data.data.url;
                   this.signStudio.code = res.data.data.code;
@@ -639,7 +654,8 @@ export default {
 
                 let newsPhone = newPhone.map(item => {
                   return {
-                    phone: item
+                    phone: item,
+                    state: 0
                   }
                 })
                 let data = {
@@ -651,10 +667,12 @@ export default {
                   // studioAddress: this.moreStudio.url,
                   code: this.moreStudio.code
                 }
+                this.showLoading();
                 console.log(data);
                 openStudio(data)
                   .then(res => {
                     if (res.data.code === 200) {
+                      this.hideLoading();
                       this.$message.success('开通成功')
                       this.cascaderInfo = [];
                       this.onLoad(this.page);
@@ -665,6 +683,7 @@ export default {
                     }
                   })
                   .catch(err => {
+                    this.hideLoading()
                     console.log(err);
                   })
               }
@@ -758,6 +777,7 @@ export default {
       let newsPhone = newPhone.map(item => {
         return {
           phone: item,
+          state: 0,
           studioId: this.studentInfo.id
         }
       })
@@ -765,9 +785,11 @@ export default {
         ...this.studentInfo,
         memberList: newsPhone,
       }
+      this.showLoading();
       appendStudent(data)
         .then(res => {
           if (res.data.code === 200) {
+            this.hideLoading();
             this.$message.success('追加学员成功')
             this.studentInfo.phone = [];
             this.onLoadStudent(this.studentPage, {
@@ -776,6 +798,7 @@ export default {
           }
         })
         .catch(err => {
+          this.hideLoading();
           console.log(err);
         })
     },

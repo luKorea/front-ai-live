@@ -34,6 +34,17 @@ export const remove = (ids) => {
     })
 }
 
+
+
+export const removeMore = (courseId) => {
+  return request({
+    url: '/api/blade-words/deleteWordsByCourseId',
+    method: 'post',
+    params: {courseId}
+  })
+}
+
+
 export const add = (row) => {
     return request({
         url: '/api/blade-course/submit',
@@ -94,14 +105,14 @@ export const lockCourse = (data) => {
 }
 
 // 话术管理
-export const speechcraftData = (courseId) => {
+export const speechcraftData = (courseId, current, size) => {
     return request({
         url: '/api/blade-words/page',
         method: 'get',
         params: {
             courseId,
-            current: 1,
-            size: 100,
+            current: current,
+            size: size,
         }
     })
 }

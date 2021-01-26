@@ -4,6 +4,8 @@
                :table-loading="loading"
                :data="data"
                :page.sync="page"
+               @current-change="currentChange"
+               @size-change="sizeChange"
                :permission="permissionList"
                :before-open="beforeOpen"
                v-model="form"
@@ -14,8 +16,6 @@
                @search-change="searchChange"
                @search-reset="searchReset"
                @selection-change="selectionChange"
-               @current-change="currentChange"
-               @size-change="sizeChange"
                @refresh-change="refreshChange"
                @on-load="onLoad">
       <template slot="menuLeft">
@@ -60,6 +60,7 @@
                :visible="addCourse"
                :before-close="handelBeforeClose"
                :close-on-click-modal="false"
+               @close="closeAddCourse"
                width="50%">
       <el-form label-width="80px" :model="addCourseInfo">
         <el-form-item label="上级课程" required>
@@ -72,12 +73,11 @@
         <el-form-item label="课程名称" required>
           <el-input v-model="addCourseInfo.courseTitle"/>
         </el-form-item>
-        <el-form-item label="视频上传">
-          <el-upload action="#" :on-change="changeData">
+        <el-form-item label="视频上传" v-if="addCourseInfo.isReal === 2">
+          <el-upload action="" :http-request="changeData" ref="uploadCourse">
             <el-button class="btn upload-btn">上传附件</el-button>
           </el-upload>
-          <el-progress :percentage="progressPercent" v-show="showProcess"
-                       status="success"/>
+          <el-progress :percentage="progressPercent" v-show="showProcess"/>
         </el-form-item>
         <el-row>
           <el-col :span="12">
@@ -95,7 +95,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-button type="primary" @click="addCourseSubmit" :disabled="btnEdit">确
+        <el-button type="primary" @click="addCourseSubmit" :disabled="btnEdit && addCourseInfo.isReal === 2">确
           定
         </el-button>
       </el-form>
@@ -187,7 +187,10 @@
                  :table-loading="loading"
                  :data="speechcraftData"
                  @row-del="speechcraftDelete"
-                 style="height: 300px; overflow: auto"
+                 @selection-change="selectionChangeSpeech"
+                 :page.sync="speechcraftPage"
+                 @current-change="speechcraftCurrentChange"
+                 @size-change="speechcraftSizeChange"
       >
         <template slot="menuLeft">
           <el-upload
@@ -209,6 +212,12 @@
           <el-button type="primary" size="small" icon="el-icon-upload2"
                      @click="downFile">下载模板
           </el-button>
+          <el-button type="danger" size="small" icon="el-icon-delete"
+                     @click="handleDeleteSpeech(speechcraftInfo.id)">一键删除
+          </el-button>
+<!--          <el-button type="danger" size="small" icon="el-icon-delete"-->
+<!--                     @click="handleDeleteSpeech">批量删除-->
+<!--          </el-button>-->
           <!--          <upload-excel></upload-excel>-->
         </template>
       </avue-crud>
@@ -229,13 +238,13 @@ import {
   lockCourse,
   speechcraftData,
   speechcraftEdit,
-  removeSpeechcraft, getTreeData, sendExcel
+  removeSpeechcraft, getTreeData, sendExcel, removeMore
 } from "@/api/course/course";
 import {mapGetters} from "vuex";
 import {formatSeconds} from "@/util/date";
 import PlvVideoUpload from '@polyv/vod-upload-js-sdk';
 import md5 from 'md5';
-import {downloadFile} from "@/util/util";
+import {downloadFile, throttle} from "@/util/util";
 
 export default {
   data() {
@@ -283,6 +292,11 @@ export default {
           {
             label: 'ID',
             prop: 'id',
+            display: false
+          },
+          {
+            label: '频道号',
+            prop: 'channelId',
             display: false
           },
           {
@@ -403,7 +417,8 @@ export default {
       showSpeechcraft: false,
       speechcraftInfo: {},
       speechcraftPage: {
-        pageSize: 1000,
+        pageSizes: [10, 100, 200, 300, 400, 500],
+        pageSize: 10,
         currentPage: 1,
         total: 0
       },
@@ -412,6 +427,7 @@ export default {
         addBtn: false,
         align: 'center',
         excelBtn: true,
+        selection: false,
         column: [
           {
             label: '序号',
@@ -461,9 +477,19 @@ export default {
   created() {
     this.videoUpload = new PlvVideoUpload({
       events: {
-        Error: (err) => {  // 错误事件回调
-          this.$message.error(`保利威错误提示: ${err}`)
-          this.showProcess = false;
+        Error: (err) => {
+          console.info(err);  // 错误事件回调
+          if (err.code) {
+            // 110：文件重复，111：拦截文件类型不在acceptedMimeType中的文件，102：用户剩余空间不足
+            let errMag = `（错误代码：${err.code}）${err.message}`;
+            if (err.code === 110 || err.code === 111) {
+              errMag += ` ${err.data.filename}`;
+            }
+            this.$message.error(errMag)
+            this.showProcess = false;
+          } else {
+            console.info(err);
+          }
         },
         UploadComplete: (e) => {
           console.log(e);
@@ -479,6 +505,18 @@ export default {
       sign: md5(`${secretkey}${pTime}`),
       hash: md5(`${pTime}${writeToken}`)
     })
+    console.log(this.videoUpload);
+    setInterval(() => {
+      console.log('获取新的值');
+      let pTime = new Date().getTime();
+        this.videoUpload.updateUserData({
+        userid: 'e896da440d', // Polyv云点播账号的ID
+        ptime: pTime,
+        sign: md5(`${secretkey}${pTime}`),
+        hash: md5(`${pTime}${writeToken}`)
+      })
+      console.log(this.videoUpload);
+    }, 3 * 60 * 1000);
   },
   computed: {
     ...mapGetters(["permission"]),
@@ -503,6 +541,22 @@ export default {
     }
   },
   methods: {
+    showLoading() {
+      this.$loading({
+        lock: true,
+        text: '数据请求中',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      });
+    },
+    hideLoading() {
+      this.$loading({
+        lock: true,
+        text: 'Loading',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.3)'
+      }).close();
+    },
     handelBeforeClose() {
       this.addCourse = false;
       this.addCourseInfo = {};
@@ -517,14 +571,14 @@ export default {
           type: 'success'
         });
         this.$refs.upload.clearFiles(); //上传成功之后清除历史记录
-        this.onLoadSpeechcraft(this.speechcraftInfo.id);
+        this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
       } else {
         this.$message({
           message: response.msg,
           type: 'error'
         });
         this.$refs.upload.clearFiles(); //上传成功之后清除历史记录
-        this.onLoadSpeechcraft(this.speechcraftInfo.id);
+        this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
       }
     },
     uploadFalse(response, file, fileList) {
@@ -553,56 +607,89 @@ export default {
           this.treeData = res.data.data;
         }).catch(err => console.log(err))
     },
+    FileStarted({ uploaderid, fileData }) { // 文件开始上传回调
+      console.log(uploaderid, fileData);
+      this.$message({
+        type: "info"  ,
+        message: '上传课程时，需要待【确定】按钮亮起时，点击保存才能成功，请耐心等待【确定】按钮高亮',
+        duration: 6000
+      })
+      this.showProcess = true;
+    },
+    FileProgress (uploadInfo) { // 文件上传过程返回上传进度信息回调
+      this.progressPercent = Math.floor((uploadInfo.progress * 100).toFixed(2))
+    },
+    FileStopped (uploadInfo) { // 文件暂停上传回调
+      console.log("文件上传停止: " + uploadInfo.fileData.title);
+    },
+    FileSucceed (uploadInfo) { // 文件上传成功回调
+      console.log(uploadInfo);
+      this.addCourseInfo.vid = uploadInfo.fileData.vid;
+      this.addCourseInfo.videoTitle = uploadInfo.fileData.filename;
+      // _that.showProcess = false;
+      this.btnEdit = false;
+    },
+    FileFailed (uploadInfo) { // 文件上传失败回调
+      console.log(uploadInfo);
+      this.showProcess = false;
+    },
     // 文件上传
     changeData(file, fileList) {
+      console.log(1);
       console.log(file);
       const _that = this;
-      this.videoUpload.addFile(
-        file.raw, // file 为待上传的文件对象
+      const uploader = this.videoUpload.addFile(
+        file.file, // file 为待上传的文件对象
         {
-          FileStarted: function (uploadInfo) { // 文件开始上传回调
-            console.log(uploadInfo);
-            _that.showProcess = true;
-          },
-          FileProgress: function (uploadInfo) { // 文件上传过程返回上传进度信息回调
-            _that.progressPercent = Math.floor((uploadInfo.progress * 100).toFixed(2))
-          },
-          FileStopped: function (uploadInfo) { // 文件暂停上传回调
-            console.log("文件上传停止: " + uploadInfo.fileData.title);
-          },
-          FileSucceed: function (uploadInfo) { // 文件上传成功回调
-            console.log(uploadInfo);
-            _that.addCourseInfo.vid = uploadInfo.fileData.vid;
-            _that.addCourseInfo.videoTitle = uploadInfo.fileData.filename;
-            // _that.showProcess = false;
-            _that.btnEdit = false;
-          },
-          FileFailed: function (uploadInfo) { // 文件上传失败回调
-            console.log(uploadInfo);
-            _that.showProcess = false;
-          }
+          FileStarted: this.FileStarted,
+          FileProgress: this.FileProgress,
+          FileStopped: this.FileStopped,
+          FileSucceed: this.FileSucceed,
+          FileFailed: this.FileFailed
         },
         {
+          desc: 'demo中设置的描述',
+          cataid: 1,
+          tag: 'demo中设置的标签',
+          luping: 0,
+          keepsource: 0,
           title: _that.addCourseInfo.courseTitle
         }
       );
-      this.videoUpload.startAll();
+      if (!uploader) return;
+      const uploaderid = uploader.id;
+      console.log(uploaderid);
+      if (uploaderid) {
+        this.videoUpload.resumeFile(uploaderid);
+      }
+    },
+    closeAddCourse() {
+      this.btnEdit = true;
+      this.showProcess = false;
+      this.$refs.uploadCourse.clearFiles();
+      this.addCourseInfo = {};
+      this.addCourseInfo.isReal = 2;
+      this.progressPercent = 0;
+      this.videoUpload.clearAll();
     },
     nodeClick(e) {
       this.addCourseInfo.courseTypeId = e.id;
     },
     addCourseSubmit() {
-      console.log(this.addCourseInfo);
+      this.showLoading();
       add({
         ...this.addCourseInfo
       }).then(() => {
+        this.hideLoading();
         this.onLoad(this.page);
         this.$message({
           type: "success",
           message: "操作成功!"
         });
+        this.loading = false;
         this.addCourse = false;
       }, error => {
+        this.hideLoading();
         window.console.log(error);
       });
     },
@@ -709,6 +796,57 @@ export default {
     selectionChange(list) {
       this.selectionList = list;
     },
+
+    // TODO 话术批量删除
+    selectionChangeSpeech(list) {
+      console.log(list);
+      this.selectionList = list;
+    },
+
+    handleDeleteSpeech(courseId) {
+      console.log(courseId);
+      this.$confirm("确定一键删除所有话术内容吗?", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          removeMore(courseId)
+          .then(res => {
+            if (res.data.code === 200) {
+                  this.$message({
+                    type: "success",
+                    message: "操作成功!"
+                  });
+              this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
+            }
+          }).catch(err => {
+            this.$message.error(err)
+          })
+        });
+      // if (this.selectionList.length === 0) {
+      //   this.$message.warning("请选择至少一条数据");
+      //   return;
+      // }
+      // this.$confirm("确定将选择数据删除?", {
+      //   confirmButtonText: "确定",
+      //   cancelButtonText: "取消",
+      //   type: "warning"
+      // })
+      //   .then(() => {
+      //     return remove(this.ids);
+      //   })
+      //   .then(() => {
+      //     this.onLoad(this.page);
+      //     this.$message({
+      //       type: "success",
+      //       message: "操作成功!"
+      //     });
+      //     this.$refs.crud.toggleSelection();
+      //   });
+    },
+
+
     selectionClear() {
       this.selectionList = [];
       this.$refs.crud.toggleSelection();
@@ -751,7 +889,7 @@ export default {
         this.coursePage.total = data.total;
         this.tableData = data.records;
         this.loading = false;
-        this.selectionClear();
+        // this.selectionClear();
       });
     },
     handleCourse() {
@@ -788,8 +926,10 @@ export default {
         dayTime: `${this.courseInfo.day} ${this.courseInfo.startTime}`,
         vid: this.courseInfo.vid
       }
+      this.showLoading();
       courseEdit(data)
         .then(res => {
+          this.hideLoading();
           if (res.data.code === 200) {
             this.courseInfo.day = '';
             this.courseInfo.startTime = '';
@@ -797,12 +937,11 @@ export default {
             this.onLoadCourse(this.courseInfo.channelId)
           }
         }).catch(err => {
+        this.hideLoading();
         console.log(err);
       })
     },
     courseDelete(row) {
-      console.log(row);
-      console.log(this.courseInfo);
       this.$confirm("确定将选择数据删除?", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -821,21 +960,23 @@ export default {
     // TODO 话术管理
     speechcraftCurrentChange(currentPage) {
       this.speechcraftPage.currentPage = currentPage;
+      this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
     },
     speechcraftSizeChange(pageSize) {
       this.speechcraftPage.pageSize = pageSize;
+      this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
     },
     speechcraftSelectionChange(list) {
       this.selectionList = list;
     },
-    onLoadSpeechcraft(courseId) {
+    onLoadSpeechcraft(courseId, current, size) {
       this.loading = true;
-      speechcraftData(courseId).then(res => {
+      speechcraftData(courseId, current, size).then(res => {
         const data = res.data.data;
         this.speechcraftPage.total = data.total;
         this.speechcraftData = data.records;
         this.loading = false;
-        this.selectionClear();
+        // this.selectionClear();
       });
     },
     speechcraftDelete(row) {
@@ -847,7 +988,7 @@ export default {
         .then(() => {
           return removeSpeechcraft(row.id)
         }).then(() => {
-        this.onLoadSpeechcraft(this.speechcraftInfo.id);
+        this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
         this.$message({
           type: "success",
           message: "操作成功!"
@@ -866,7 +1007,7 @@ export default {
       this.speechcraftInfo = this.selectionList[0] || {};
       this.courseTypeId  = this.speechcraftInfo.courseTypeId;
       console.log(this.speechcraftInfo);
-      this.onLoadSpeechcraft(this.speechcraftInfo.id);
+      this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
     },
     submitSpeechcraft() {
       if (this.speechcraftInfo.time === undefined || !this.speechcraftInfo.time) {
@@ -884,14 +1025,17 @@ export default {
         verbalContent: this.speechcraftInfo.verbalContent,
         // courseTypeId: this.speechcraftInfo.courseTypeId
       }
+      this.showLoading();
       speechcraftEdit(data)
         .then(res => {
           if (res.data.code === 200) {
+            this.hideLoading();
             this.$message.success('操作成功')
-            // this.speechcraftInfo.verbalContent = '';
-            this.onLoadSpeechcraft(this.speechcraftInfo.id)
+            this.speechcraftInfo.verbalContent = '';
+            this.onLoadSpeechcraft(this.speechcraftInfo.id, this.speechcraftPage.currentPage, this.speechcraftPage.pageSize);
           }
         }).catch(err => {
+        this.hideLoading();
         console.log(err);
       })
     },

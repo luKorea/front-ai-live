@@ -29,7 +29,7 @@ NProgress.configure({
 });
 //HTTPrequest拦截
 axios.interceptors.request.use(config => {
-  NProgress.start() // start progress bar
+  // NProgress.start() // start progress bar
   const meta = (config.meta || {});
   const isToken = meta.isToken === false;
   // config.headers['content-type'] = 'multipart/form-data'
@@ -47,7 +47,7 @@ axios.interceptors.request.use(config => {
 });
 //HTTPresponse拦截
 axios.interceptors.response.use(res => {
-  NProgress.done();
+  // NProgress.done();
   const status = res.data.code || 200
   const statusWhiteList = website.statusWhiteList || [];
   const message = res.data.msg || '未知错误';
@@ -65,7 +65,7 @@ axios.interceptors.response.use(res => {
   }
   return res;
 }, error => {
-  NProgress.done();
+  // NProgress.done();
   return Promise.reject(new Error(error));
 })
 

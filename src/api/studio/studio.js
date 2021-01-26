@@ -24,6 +24,19 @@ export const getListPage = (current, size, params) => {
   })
 }
 
+export const getLivePage = (current, size, params) => {
+  return request({
+    url: '/api/blade-studio/getUserMonitoringListLive',
+    method: 'get',
+    params: {
+      ...params,
+      current,
+      size,
+    }
+  })
+}
+
+
 
 export const getDetail = (id) => {
   return request({
@@ -53,6 +66,17 @@ export const getHistoryMessage = (params) => {
     method: 'get',
     params: {
       ...params
+    }
+  })
+}
+
+// 获取直播历史记录
+export const getLiveHistoryMessage = (studioIds) => {
+  return request({
+    url: '/api/blade-studio-history/getByStudioIdsHistory',
+    method: 'get',
+    params: {
+      studioIds
     }
   })
 }

@@ -40,4 +40,7 @@ export default {
     margin-right: 10px;
   }
 }
+#nprogress .bar {
+  background: rgba(250,250,250, 0) !important; //自定义颜色
+}
 </style>

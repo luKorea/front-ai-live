@@ -17,7 +17,9 @@ import {
 import i18n from './lang' // Internationalization
 import './styles/common.scss';
 
-import basicContainer from './components/basic-container/main'
+import basicContainer from './components/basic-container/main';
+import Chat from 'jwchat';
+Vue.use(Chat)
 
 Vue.use(router)
 Vue.use(VueAxios, axios)
